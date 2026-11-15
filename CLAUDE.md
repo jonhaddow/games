@@ -10,3 +10,19 @@ The family games app at https://games.app.haddow.me: a home screen of games, one
 - Scores are trusted from the client (household games); only sanity limits apply.
 - `e2e/fixtures.sql` seeds Sam and Kim, and the e2e tests rely on them.
 - No secrets, no service worker, no Tailwind.
+
+## Stack (`/stack`)
+
+- `src/lib/stack/stacker.ts` is the rules (slicing, perfect drops, speed, sky colours): pure and unit tested, keep it that way. `Game.svelte` draws it on a canvas and runs the loop. Its look (sky, stencil type, slabs) is scoped to the component.
+- The canvas loop keeps its state in plain variables, not `$state`: it changes every frame.
+- Before a name is picked, the best stays in `localStorage` (`stack-best`).
+
+## Race (`/race`)
+
+- three.js, loaded only on its page. `src/lib/race/`: `track.ts`, `terrain.ts`, `bike.ts`, `ai.ts`, `race.ts` and `tilt.ts` are pure and unit tested, so keep three.js out of them. `game.ts` runs the loop; `world.ts` and `models.ts` build the scene.
+- Its styles are scoped to the page. The rules for `html`, `body` and its variables apply only while it's open (`:has(.race)`).
+- The best lap lives in `localStorage` (`race:best-lap`, seconds) and goes on the board in milliseconds, on load and after each race.
+- Conventions: heading h moves along (sin h, cos h) in x/z. Positive steer, lateral and lean are to the right, and positive curvature turns left.
+- Tilt comes from `deviceorientation` relative to the screen orientation (`hooks.server.ts` allows the accelerometer and gyroscope). iOS needs `requestPermission` from a tap (Start).
+- Aimed at young kids: arcade handling. Tuning: rival skills in `Game.setUp`, grip and speed in `bike.ts`. Keep ramps on straights with a flat or uphill landing.
+- Testing: headless Chromium renders WebGL in software (swiftshader, deviceScaleFactor 1, landscape in `race.spec.ts`). To test a lap, step `game.update(1/60)` from `page.evaluate`.
