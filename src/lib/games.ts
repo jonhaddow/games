@@ -1,4 +1,4 @@
-// The games the launcher knows about. Shared with the browser, so no server code here.
+// The games in this app. Shared with the browser, so no server code here.
 
 export type Board = {
 	/** What the board ranks, e.g. "Tallest tower". */
@@ -13,7 +13,8 @@ export type Board = {
 export type Game = {
 	key: string;
 	name: string;
-	url: string;
+	/** Its page in this app. */
+	path: string;
 	blurb: string;
 	board?: Board;
 };
@@ -26,13 +27,11 @@ export function lapTime(ms: number) {
 	return `${m}:${s}`;
 }
 
-const app = (name: string) => `https://${name}.app.haddow.me`;
-
 export const GAMES: Game[] = [
 	{
 		key: 'stack',
 		name: 'Stack',
-		url: app('stack'),
+		path: '/stack',
 		blurb: 'Drop the blocks, build the tower',
 		board: {
 			title: 'Tallest tower',
@@ -44,7 +43,7 @@ export const GAMES: Game[] = [
 	{
 		key: 'race',
 		name: 'Race',
-		url: app('race'),
+		path: '/race',
 		blurb: 'Motorbikes, ramps and big air',
 		board: {
 			title: 'Fastest lap',
@@ -52,24 +51,6 @@ export const GAMES: Game[] = [
 			max: 60 * 60 * 1000,
 			format: lapTime
 		}
-	},
-	{
-		key: 'squid',
-		name: 'Squid Spells',
-		url: app('squid'),
-		blurb: 'Draw spells, make sea friends',
-		board: {
-			title: 'Most friends',
-			order: 'high',
-			max: 100_000,
-			format: (n) => `${n} ${n === 1 ? 'friend' : 'friends'}`
-		}
-	},
-	{
-		key: 'crops',
-		name: 'Crops',
-		url: app('crops'),
-		blurb: 'Farm, fish and ride round the village'
 	}
 ];
 

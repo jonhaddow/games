@@ -1,31 +1,25 @@
-import { fail, redirect } from '@sveltejs/kit';
+import { fail, redirect, type Cookies } from '@sveltejs/kit';
+import { safeBack } from '#lib/server/forms.ts';
 import { COLOURS } from '#lib/games.ts';
 import {
 	PROFILE_COOKIE,
 	cleanName,
 	findProfile,
 	listProfiles,
-	safeReturn,
 	saveProfile,
-	setProfileCookie,
-	withProfile
+	setProfileCookie
 } from '#lib/server/profiles.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url, locals }) => ({
-	back: safeReturn(url.searchParams.get('back')),
+	back: safeBack(url.searchParams.get('back')),
 	others: (await listProfiles(locals.db)).filter((p) => p.id !== locals.profile?.id)
 });
 
-/** Remembers the player here and goes back, handing a game the id. */
-function done(
-	cookies: Parameters<Actions[string]>[0]['cookies'],
-	id: string,
-	back: unknown
-): never {
+/** Remembers the player on this device and goes back. */
+function done(cookies: Cookies, id: string, back: FormDataEntryValue | null): never {
 	setProfileCookie(cookies, id);
-	const to = withProfile(safeReturn(back), id);
-	redirect(303, to, to.startsWith('/') ? undefined : { external: [new URL(to).origin] });
+	redirect(303, safeBack(back));
 }
 
 export const actions: Actions = {

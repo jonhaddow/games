@@ -5,9 +5,6 @@ import { profile } from './db/schema.ts';
 import type { DB } from './db/index.ts';
 
 export const PROFILE_COOKIE = 'games-profile';
-/** How a game names its player to the score API (see the api route). */
-export const PROFILE_HEADER = 'x-games-profile';
-const SITE = 'app.haddow.me';
 
 export function findProfile(db: DB, id: string) {
 	return db
@@ -50,11 +47,7 @@ export async function saveProfile(
 	return fresh;
 }
 
-/**
- * The launcher's own profile cookie. Games don't use it: on iOS every
- * home-screen app has its own cookies, so each game keeps the id itself,
- * handed over in the link back (`withProfile`).
- */
+/** The profile cookie: this device's player. */
 export function setProfileCookie(cookies: Cookies, id: string) {
 	cookies.set(PROFILE_COOKIE, id, {
 		path: '/',
@@ -62,25 +55,4 @@ export function setProfileCookie(cookies: Cookies, id: string) {
 		sameSite: 'lax',
 		maxAge: 400 * 86_400
 	});
-}
-
-/** A link to a game that hands it the player's id (in the hash, so it's never sent to a server). */
-export function withProfile(url: string, id: string) {
-	if (url.startsWith('/')) return url;
-	const u = new URL(url);
-	u.hash = `profile=${id}`;
-	return u.href;
-}
-
-/** Where to go after saving a profile: a path here, or another *.app.haddow.me game. */
-export function safeReturn(value: unknown) {
-	if (typeof value !== 'string') return '/';
-	if (value.startsWith('/') && !value.startsWith('//') && !value.startsWith('/\\')) return value;
-	try {
-		const url = new URL(value);
-		if (url.protocol === 'https:' && url.hostname.endsWith(`.${SITE}`)) return url.href;
-	} catch {
-		// Not a URL.
-	}
-	return '/';
 }
