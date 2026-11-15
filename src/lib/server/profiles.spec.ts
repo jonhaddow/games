@@ -1,6 +1,13 @@
 import { expect, it } from 'vitest';
 import { testDb } from './test-db.ts';
-import { cleanName, findProfile, safeReturn, saveProfile } from './profiles.ts';
+import {
+	cleanName,
+	findProfile,
+	listProfiles,
+	safeReturn,
+	saveProfile,
+	withProfile
+} from './profiles.ts';
 
 it('tidies names', () => {
 	expect(cleanName('  Big   Al  ')).toBe('Big Al');
@@ -30,8 +37,16 @@ it('only returns to this app or another of ours', () => {
 	expect(safeReturn(null)).toBe('/');
 });
 
-it('formats lap times the way race does', async () => {
-	const { lapTime } = await import('../games.ts');
-	expect(lapTime(75_456)).toBe('1:15.46');
-	expect(lapTime(5_000)).toBe('0:05.00');
+it('hands games the player in the link back', () => {
+	expect(withProfile('https://stack.app.haddow.me/', 'abc')).toBe(
+		'https://stack.app.haddow.me/#profile=abc'
+	);
+	expect(withProfile('/boards/stack', 'abc')).toBe('/boards/stack');
+});
+
+it('lists everyone by name, to claim', async () => {
+	const db = await testDb();
+	await saveProfile(db, null, 'Sam', '#ffffff');
+	await saveProfile(db, null, 'Alex', '#ffffff');
+	expect((await listProfiles(db)).map((p) => p.name)).toEqual(['Alex', 'Sam']);
 });

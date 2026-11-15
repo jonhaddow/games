@@ -1,10 +1,12 @@
 import type { Cookies } from '@sveltejs/kit';
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import { COLOURS, NAME_MAX } from '../games.ts';
 import { profile } from './db/schema.ts';
 import type { DB } from './db/index.ts';
 
 export const PROFILE_COOKIE = 'games-profile';
+/** How a game names its player to the score API (see the api route). */
+export const PROFILE_HEADER = 'x-games-profile';
 const SITE = 'app.haddow.me';
 
 export function findProfile(db: DB, id: string) {
@@ -13,6 +15,14 @@ export function findProfile(db: DB, id: string) {
 		.from(profile)
 		.where(eq(profile.id, id))
 		.then(([p]) => p ?? null);
+}
+
+/** Everyone who's picked a name, to claim one on another device or app. */
+export function listProfiles(db: DB) {
+	return db
+		.select({ id: profile.id, name: profile.name, colour: profile.colour })
+		.from(profile)
+		.orderBy(asc(profile.name));
 }
 
 /** A tidy name, or null if there's nothing left of it. */
@@ -41,18 +51,25 @@ export async function saveProfile(
 }
 
 /**
- * The profile cookie. On the live site it's shared by every *.app.haddow.me
- * game, which send it with their score requests (same site, so SameSite=Lax
- * allows it). HttpOnly: the games never need to read it.
+ * The launcher's own profile cookie. Games don't use it: on iOS every
+ * home-screen app has its own cookies, so each game keeps the id itself,
+ * handed over in the link back (`withProfile`).
  */
-export function setProfileCookie(cookies: Cookies, id: string, host: string) {
+export function setProfileCookie(cookies: Cookies, id: string) {
 	cookies.set(PROFILE_COOKIE, id, {
 		path: '/',
 		httpOnly: true,
 		sameSite: 'lax',
-		maxAge: 400 * 86_400,
-		...(host.endsWith(`.${SITE}`) ? { domain: SITE } : {})
+		maxAge: 400 * 86_400
 	});
+}
+
+/** A link to a game that hands it the player's id (in the hash, so it's never sent to a server). */
+export function withProfile(url: string, id: string) {
+	if (url.startsWith('/')) return url;
+	const u = new URL(url);
+	u.hash = `profile=${id}`;
+	return u.href;
 }
 
 /** Where to go after saving a profile: a path here, or another *.app.haddow.me game. */

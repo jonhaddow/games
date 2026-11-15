@@ -2,7 +2,7 @@
 
 A launcher for a family's web games, with one shared profile and leaderboard.
 
-The home screen links to each game, and each game stays on its own site. You pick a name and colour once, with no sign-in. A cookie shared across the games' sites identifies the device, and the games send scores to this app's API from the browser. Renaming yourself updates every board.
+The home screen links to each game, and each game stays on its own site. You pick a name and colour once, with no sign-in. The launcher hands each game the player's id in its link, and the games send scores to this app's API from the browser. Renaming yourself updates every board.
 
 ## Tech stack
 
@@ -23,7 +23,7 @@ Tests: `npm test` (unit), `npm run test:e2e` (Playwright), `npm run check` (type
 
 ## Score API
 
-Games call it with `fetch(url, { credentials: 'include' })`. CORS allows `https://*.app.haddow.me` only.
+Games name the player with an `x-games-profile` header (the id they were handed as `#profile=<id>`). CORS allows `https://*.app.haddow.me` only.
 
 - `GET /api/scores/<game>` returns the board: `{ player, rows, me }`.
 - `POST /api/scores/<game>` with `{ "value": n }` keeps the player's best, then returns the board. Without a profile, it's ignored, but the board still comes back.

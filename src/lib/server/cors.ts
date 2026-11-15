@@ -1,7 +1,7 @@
 import { dev } from '$app/env';
 
 // The games live on their own *.app.haddow.me sites and call the score API
-// from the browser, with the profile cookie.
+// from the browser, naming the player in a header (no cookies).
 const ALLOWED = /^https:\/\/[a-z0-9-]+\.app\.haddow\.me$/;
 const LOCAL = /^http:\/\/localhost:\d+$/;
 
@@ -11,9 +11,8 @@ export function cors(request: Request): Record<string, string> {
 	if (!origin || !(ALLOWED.test(origin) || (dev && LOCAL.test(origin)))) return {};
 	return {
 		'Access-Control-Allow-Origin': origin,
-		'Access-Control-Allow-Credentials': 'true',
 		'Access-Control-Allow-Methods': 'GET, POST',
-		'Access-Control-Allow-Headers': 'content-type',
+		'Access-Control-Allow-Headers': 'content-type, x-games-profile',
 		'Access-Control-Max-Age': '86400',
 		Vary: 'Origin'
 	};

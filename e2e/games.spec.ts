@@ -14,8 +14,16 @@ test('pick a name, post a score, see it on the board', async ({ page }) => {
 	await expect(page).toHaveURL('/');
 	await expect(page.getByRole('link', { name: 'Alex' })).toBeVisible();
 
-	// What a game does from its own site (same cookie).
-	const res = await page.request.post('/api/scores/stack', { data: { value: 20 } });
+	// Game tiles hand the game who's playing.
+	const href = await page.locator('a.play').first().getAttribute('href');
+	const id = href!.split('#profile=')[1];
+	expect(href).toBe(`https://stack.app.haddow.me/#profile=${id}`);
+
+	// What a game does from its own site.
+	const res = await page.request.post('/api/scores/stack', {
+		data: { value: 20 },
+		headers: { 'x-games-profile': id }
+	});
 	const body = (await res.json()) as { player: { name: string }; me: { rank: number } };
 	expect(body.player.name).toBe('Alex');
 	expect(body.me.rank).toBe(2);
@@ -44,16 +52,30 @@ test('the API lets our games in, and only them', async ({ request }) => {
 		headers: { origin: 'https://stack.app.haddow.me' }
 	});
 	expect(ours.headers()['access-control-allow-origin']).toBe('https://stack.app.haddow.me');
-	expect(ours.headers()['access-control-allow-credentials']).toBe('true');
+	expect(ours.headers()['access-control-allow-headers']).toContain('x-games-profile');
 
 	const theirs = await request.get('/api/scores/stack', {
 		headers: { origin: 'https://evil.example' }
 	});
 	expect(theirs.headers()['access-control-allow-origin']).toBeUndefined();
 
-	// No profile: the score isn't kept, but the board still comes back.
+	// No profile (or an unknown one): the score isn't kept, but the board still comes back.
+	const stranger = await request.post('/api/scores/stack', {
+		data: { value: 99 },
+		headers: { 'x-games-profile': 'nobody' }
+	});
+	expect(((await stranger.json()) as { player: null }).player).toBeNull();
 	const anon = await request.post('/api/scores/stack', { data: { value: 99 } });
 	expect(((await anon.json()) as { player: null }).player).toBeNull();
 	expect((await request.post('/api/scores/stack', { data: { value: -1 } })).status()).toBe(400);
 	expect((await request.get('/api/scores/crops')).status()).toBe(404);
+});
+
+test('claim an existing player from a game, and go back with it', async ({ page }) => {
+	await open(page, '/profile?back=' + encodeURIComponent('https://stack.app.haddow.me/'));
+	await page.route('https://stack.app.haddow.me/**', (r) => r.fulfill({ body: 'stack' }));
+	await page.getByRole('button', { name: 'That’s me: Kim' }).click();
+	await expect(page).toHaveURL('https://stack.app.haddow.me/#profile=p-kim');
+	await open(page, '/');
+	await expect(page.getByRole('link', { name: 'Kim' })).toBeVisible();
 });
