@@ -2,7 +2,8 @@
 	import type { Attachment } from 'svelte/attachments';
 	import type { Game, Hud } from '#lib/race/game.ts';
 	import '@fontsource/russo-one/latin.css';
-	import { LAPS, formatTime } from '#lib/race/race.ts';
+	import { LAPS, RECORD_KEY, formatTime } from '#lib/race/race.ts';
+	import { postScore } from '#lib/scores.ts';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -20,17 +21,12 @@
 	/** Sends a best lap (seconds) to the board, in milliseconds. It keeps the faster. */
 	async function sendBest(seconds: number) {
 		if (!data.player || !(seconds > 0)) return;
-		const res = await fetch('/api/scores/race', {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ value: Math.round(seconds * 1000) })
-		}).catch(() => null);
-		if (res?.ok) rank = ((await res.json()) as { me: { rank: number } | null }).me?.rank;
+		rank = (await postScore('race', Math.round(seconds * 1000)))?.rank;
 	}
 
 	// The best lap on this device, from before a name was picked or from offline.
 	$effect(() => {
-		void sendBest(Number(localStorage.getItem('race:best-lap')));
+		void sendBest(Number(localStorage.getItem(RECORD_KEY)));
 	});
 
 	// And at the end of each race. A plain number, so the HUD's refresh every
@@ -69,6 +65,8 @@
 			coarse.removeEventListener('change', media);
 			tall.removeEventListener('change', media);
 			game?.dispose();
+			void wakeLock?.release();
+			wakeLock = undefined;
 		};
 	};
 
@@ -82,6 +80,7 @@
 			const o = screen.orientation as ScreenOrientation & { lock?(o: string): Promise<void> };
 			await o.lock?.('landscape').catch(() => {});
 		}
+		await wakeLock?.release();
 		wakeLock = await navigator.wakeLock?.request('screen').catch(() => undefined);
 		game.start();
 		hud = { ...game.hud };

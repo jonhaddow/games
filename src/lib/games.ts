@@ -19,7 +19,7 @@ export type Game = {
 	board?: Board;
 };
 
-/** Milliseconds as m:ss.cc, the way race shows lap times. */
+/** Milliseconds as m:ss.cc. */
 export function lapTime(ms: number) {
 	const cs = Math.round(ms / 10);
 	const m = Math.floor(cs / 6000);

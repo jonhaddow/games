@@ -1,3 +1,4 @@
+import { lapTime } from '../games.ts';
 // Lap counting and standings. Each racer has an unwrapped `progress`: metres
 // travelled along the track since the start line (negative on the grid).
 import type { Track } from './track.ts';
@@ -33,8 +34,8 @@ export function order(racers: Standing[]) {
 	});
 }
 
-export function formatTime(seconds: number) {
-	const m = Math.floor(seconds / 60);
-	const s = seconds - m * 60;
-	return `${m}:${s.toFixed(2).padStart(5, '0')}`;
-}
+/** Seconds as m:ss.cc, the same as the leaderboard shows. */
+export const formatTime = (seconds: number) => lapTime(seconds * 1000);
+
+/** Where the best lap on this device is kept (seconds). */
+export const RECORD_KEY = 'race:best-lap';

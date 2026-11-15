@@ -1,7 +1,7 @@
 import { devices, expect, test } from '@playwright/test';
 
 // Race is played sideways, and its software-rendered 3D is slow under test.
-test.use({ viewport: devices['Pixel 7 landscape'].viewport, deviceScaleFactor: 1 });
+test.use({ viewport: devices['Pixel 7 landscape'].viewport });
 test.setTimeout(60_000);
 
 test('starts a race, counts down and rides off with the gas held', async ({ page }) => {

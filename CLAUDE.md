@@ -6,7 +6,7 @@ The family games app at https://games.app.haddow.me: a home screen of games, one
 
 - `src/lib/games.ts` lists the games and their boards (which way is better, sane maximum, formatting). Adding a game or a board starts there. Tile icons are in `static/icons/`.
 - A profile is a random id in the `games-profile` cookie (HttpOnly, host-only). The profile page lists everyone, to claim a name ("That's me") on another device instead of making a duplicate. Anyone can claim anyone, which is fine for a household.
-- Games post scores to `/api/scores/<game>` (same origin, with the cookie). `best` keeps one row per player per game. Games should post their device's best each time they show it, so scores from before a name was picked still count.
+- Games post scores with `postScore` (`src/lib/scores.ts`) to `/api/scores/<game>`. `best` keeps one row per player per game. Games should post their device's best each time they show it, so scores from before a name was picked still count.
 - Scores are trusted from the client (household games); only sanity limits apply.
 - `e2e/fixtures.sql` seeds Sam and Kim, and the e2e tests rely on them.
 - No secrets, no service worker, no Tailwind.
@@ -15,7 +15,7 @@ The family games app at https://games.app.haddow.me: a home screen of games, one
 
 - `src/lib/stack/stacker.ts` is the rules (slicing, perfect drops, speed, sky colours): pure and unit tested, keep it that way. `Game.svelte` draws it on a canvas and runs the loop. Its look (sky, stencil type, slabs) is scoped to the component.
 - The canvas loop keeps its state in plain variables, not `$state`: it changes every frame.
-- Before a name is picked, the best stays in `localStorage` (`stack-best`).
+- The best on this device is kept in `localStorage` (`stack-best`), and goes on the board once a name is picked.
 
 ## Race (`/race`)
 

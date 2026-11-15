@@ -5,7 +5,7 @@ import { pace, stepRider, type Rider } from './ai.ts';
 import { glance, stepBike, stepBody, type Bike, type Body } from './bike.ts';
 import { Input } from './input.ts';
 import { makeBike, type BikeModel } from './models.ts';
-import { LAPS, advance, lapsDone, order } from './race.ts';
+import { LAPS, RECORD_KEY, advance, lapsDone, order } from './race.ts';
 import {
 	CIRCUIT,
 	RAMPS,
@@ -43,7 +43,6 @@ export interface Hud {
 
 const COLOURS = [0xffd21f, 0xd8262e, 0x2f6fd6, 0x2bb673];
 const COUNTDOWN = 3;
-const RECORD_KEY = 'race:best-lap';
 
 interface Racer {
 	id: number;
@@ -177,7 +176,18 @@ export class Game {
 		cancelAnimationFrame(this.frame);
 		this.resize.disconnect();
 		this.input.detach();
+		// Free the GPU now, not whenever the page is collected: coming back to
+		// the race builds a new world and WebGL context each time.
+		this.scene.traverse((o) => {
+			if (!(o instanceof THREE.Mesh)) return;
+			(o.geometry as THREE.BufferGeometry).dispose();
+			for (const m of [o.material as THREE.Material | THREE.Material[]].flat()) {
+				for (const v of Object.values(m)) if (v instanceof THREE.Texture) v.dispose();
+				m.dispose();
+			}
+		});
 		this.renderer.dispose();
+		this.renderer.forceContextLoss();
 	}
 
 	private fit() {

@@ -12,6 +12,7 @@
 		starsAt,
 		type Slab
 	} from './stacker.ts';
+	import { postScore } from '#lib/scores.ts';
 
 	type Props = {
 		/** The player's best so far, or null before they've picked a name (then it's kept on this device). */
@@ -33,9 +34,15 @@
 	let saving = $state(false);
 	let saveFailed = $state(false);
 
-	// Signed out, the best is kept on this device.
+	// The best on this device counts too: before a name is picked it's all
+	// there is, and after, one from before goes on the board.
 	$effect(() => {
-		if (!signedIn) best = Number(localStorage.getItem(LOCAL_BEST) ?? 0);
+		const local = Number(localStorage.getItem(LOCAL_BEST) ?? 0);
+		if (!signedIn) best = local;
+		else if (local > (serverBest ?? 0))
+			void postScore('stack', local).then((me) => {
+				if (me) best = me.value;
+			});
 	});
 
 	// Everything the canvas draws; plain objects, not state, as it changes every frame.
@@ -121,30 +128,18 @@
 
 	async function gameOver() {
 		phase = 'over';
-		const before = best;
-		if (height > before) {
+		if (height > best) {
 			best = height;
 			newBest = true;
 		}
-		if (!signedIn) {
-			localStorage.setItem(LOCAL_BEST, String(best));
-			return;
-		}
-		if (height === 0) return;
+		if (height > Number(localStorage.getItem(LOCAL_BEST) ?? 0))
+			localStorage.setItem(LOCAL_BEST, String(height));
+		if (!signedIn || height === 0) return;
 		saving = true;
-		try {
-			const res = await fetch('/api/scores/stack', {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ value: height })
-			});
-			if (!res.ok) throw new Error(String(res.status));
-			best = ((await res.json()) as { me: { value: number } | null }).me?.value ?? best;
-		} catch {
-			saveFailed = true;
-		} finally {
-			saving = false;
-		}
+		const me = await postScore('stack', height);
+		saving = false;
+		if (me) best = me.value;
+		else saveFailed = true;
 	}
 
 	function onKey(e: KeyboardEvent) {
