@@ -18,7 +18,7 @@
 		{#each GAMES as game (game.key)}
 			{@const mine = data.bests[game.key]}
 			<li class="tile">
-				<a class="play" href={game.url}>
+				<a class="play" href={game.path}>
 					<img src="/icons/{game.key}.png" alt="" width="96" height="96" />
 					<span class="name">{game.name}</span>
 					<span class="blurb">{game.blurb}</span>

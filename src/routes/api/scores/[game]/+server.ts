@@ -1,9 +1,8 @@
-// The score API the games call from their own sites (see cors.ts):
-// GET a game's board, POST a finished game's score. Both answer with the board
-// and the player ({ player: null } when this device hasn't picked a name).
+// The games' score API: GET a game's board, POST a finished game's score.
+// Both answer with the board and the player ({ player: null } before this
+// device has picked a name; the score isn't kept then).
 import { error, json } from '@sveltejs/kit';
 import { byKey } from '#lib/games.ts';
-import { cors } from '#lib/server/cors.ts';
 import { standings, submit, validScore } from '#lib/server/scores.ts';
 import type { RequestEvent, RequestHandler } from './$types';
 
@@ -13,16 +12,12 @@ function boardFor(game: string) {
 	return board;
 }
 
-async function reply({ params, locals, request }: RequestEvent) {
-	const board = boardFor(params.game);
+async function reply({ params, locals }: RequestEvent) {
 	const p = locals.profile;
-	return json(
-		{
-			player: p && { name: p.name, colour: p.colour },
-			...(await standings(locals.db, params.game, board, p?.id ?? null))
-		},
-		{ headers: cors(request) }
-	);
+	return json({
+		player: p && { name: p.name, colour: p.colour },
+		...(await standings(locals.db, params.game, boardFor(params.game), p?.id ?? null))
+	});
 }
 
 export const GET: RequestHandler = reply;
@@ -35,6 +30,3 @@ export const POST: RequestHandler = async (event) => {
 	if (locals.profile) await submit(locals.db, params.game, board, locals.profile.id, value);
 	return reply(event);
 };
-
-export const OPTIONS: RequestHandler = ({ request }) =>
-	new Response(null, { status: 204, headers: cors(request) });

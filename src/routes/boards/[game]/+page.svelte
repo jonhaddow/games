@@ -43,7 +43,7 @@
 		<p class="empty">Nobody’s on this board yet.</p>
 	{/if}
 
-	<a class="button" href={game.url}>Play {game.name}</a>
+	<a class="button" href={game.path}>Play {game.name}</a>
 </main>
 
 <style>

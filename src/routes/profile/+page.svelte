@@ -15,7 +15,7 @@
 	<h1>{data.player ? 'Your profile' : 'Pick a name'}</h1>
 	<p class="lede">It goes on the leaderboards in every game on this device.</p>
 
-	<form method="POST" use:enhance>
+	<form method="POST" action="?/save" use:enhance>
 		<input type="hidden" name="back" value={data.back} />
 		<label class="field">
 			<span>Name</span>
@@ -42,6 +42,27 @@
 		{#if form?.error}<p class="error" role="alert">{form.error}</p>{/if}
 		<button class="button">Save</button>
 	</form>
+
+	{#if data.others.length}
+		<section class="claim">
+			<h2>{data.player ? 'Switch player' : 'Already on the boards?'}</h2>
+			<p>Tap your name to use it here too.</p>
+			<ul>
+				{#each data.others as p (p.id)}
+					<li>
+						<form method="POST" action="?/claim" use:enhance>
+							<input type="hidden" name="id" value={p.id} />
+							<input type="hidden" name="back" value={data.back} />
+							<button style:--c={p.colour} aria-label="That’s me: {p.name}">
+								<span class="dot">{p.name[0]}</span>
+								<span>{p.name}</span>
+							</button>
+						</form>
+					</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
 </main>
 
 <style>
@@ -133,6 +154,44 @@
 		background: var(--c);
 		font: 22px/1 var(--display);
 		text-transform: uppercase;
+	}
+	.claim {
+		margin-top: 36px;
+		padding-top: 24px;
+		border-top: 3px dashed var(--ink);
+	}
+	.claim h2 {
+		margin: 0;
+		font: 22px/1 var(--display);
+	}
+	.claim p {
+		margin: 6px 0 14px;
+	}
+	.claim ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+	.claim button {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		padding: 5px 14px 5px 5px;
+		border: var(--line);
+		border-radius: 999px;
+		background: var(--card);
+		box-shadow: var(--shadow-small);
+		color: var(--ink);
+		font: 800 16px/1 var(--body);
+		cursor: pointer;
+	}
+	.claim .dot {
+		width: 32px;
+		height: 32px;
+		font-size: 15px;
 	}
 	.error {
 		margin: 0;
