@@ -15,7 +15,11 @@ export default defineConfig({
 	use: {
 		baseURL: `http://localhost:${PORT}`,
 		...devices['Pixel 7'],
-		trace: 'retain-on-failure'
+		trace: 'retain-on-failure',
+		// Race's 3D needs WebGL, which headless Chromium renders in software:
+		// fewer pixels keep its frame rate (and so game time) up.
+		deviceScaleFactor: 1,
+		launchOptions: { args: ['--enable-unsafe-swiftshader', '--use-angle=swiftshader'] }
 	},
 	webServer: {
 		command: `./e2e/reset-db.sh && E2E_DB=.wrangler/e2e/v3 npx vite dev --port ${PORT} --strictPort`,

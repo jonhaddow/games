@@ -10,7 +10,9 @@ const SECURITY_HEADERS = {
 	'X-Frame-Options': 'DENY',
 	'X-Content-Type-Options': 'nosniff',
 	'Referrer-Policy': 'strict-origin-when-cross-origin',
-	'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
+	// Race steers by tilting the phone.
+	'Permissions-Policy':
+		'accelerometer=(self), gyroscope=(self), camera=(), microphone=(), geolocation=()'
 };
 
 export const handle: Handle = async ({ event, resolve }) => {

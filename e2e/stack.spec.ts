@@ -35,3 +35,13 @@ test('with a name, a finished game goes on the board', async ({ page }) => {
 	await expect(page).toHaveURL('/boards/stack');
 	await expect(page.locator('.rows li.me')).toContainText('Kim');
 });
+
+test('a best from before the name was picked goes on the board', async ({ page }) => {
+	await page.addInitScript(() => localStorage.setItem('stack-best', '50'));
+	await open(page, '/profile?back=/stack');
+	await page.getByRole('button', { name: 'That’s me: Sam' }).click();
+	await expect(page).toHaveURL('/stack');
+	await expect(page.getByText('Best 50')).toBeVisible();
+	await open(page, '/boards/stack');
+	await expect(page.locator('.rows li').first()).toContainText(/Sam.*50/);
+});
