@@ -130,7 +130,7 @@
 	$effect(() => {
 		// After the save loads, so it posts this squid's best, not a fresh one's.
 		if (!home || !loaded || linking) return;
-		// Again once a name's picked or linked.
+		// Re-run when the player's name arrives (picked, or linked from the old app): their scores go on the boards then.
 		void name;
 		let live = true;
 		void syncBoards(untrack(() => $state.snapshot(player))).then((rows) => {

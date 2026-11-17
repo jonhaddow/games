@@ -37,4 +37,5 @@ A drawing game for younger kids, moved in from `~/code/squid` (squid.app.haddow.
 - Its styles are scoped to the page (`:has(.squid)`). Its own manifest (`static/squid/`) makes it a separate home-screen app, landscape and full screen.
 - Offline: `src/service-worker/` is registered from the page with scope `/squid` (SvelteKit's auto-register is off). The page sends it the files it loaded to keep; the page itself is network first.
 - Moving from the old app: its last version sends each device to `/squid#import=<its storage>` (`handoff.ts`). The old board's rows were copied in as profiles `squid:<device>` (`scripts/squid-import.ts`); `/api/squid/link` gives that profile to the device, or merges it into the player already there (`src/lib/server/squid.ts`).
+- Once nobody opens the old app (squid.app.haddow.me), remove the hand-off: `importSave`, `/api/squid/link`, `server/squid.ts` and `scripts/squid-import.ts`.
 - E2E: `e2e/squid.spec.ts` reads `window.__squid.state`, and runs without race's software WebGL, which makes its fast-forwards too slow.

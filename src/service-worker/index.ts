@@ -23,31 +23,34 @@ self.addEventListener('message', (event) => {
 	if (data?.type !== 'keep') return;
 	event.waitUntil(
 		(async () => {
-			const urls = new Set([PAGE, ...data.urls.filter(ours)]);
+			const paths = new Set([PAGE, ...data.urls.map(path).filter(keepable)]);
 			const cache = await caches.open(CACHE);
 			try {
-				await cache.addAll([...urls]);
+				await cache.addAll([...paths]);
 			} catch {
 				return; // Offline partway: keep the copy there is.
 			}
-			for (const req of await cache.keys())
-				if (!urls.has(new URL(req.url).pathname)) await cache.delete(req);
+			for (const req of await cache.keys()) if (!paths.has(path(req.url))) await cache.delete(req);
 		})()
 	);
 });
 
-/** A file of this site worth keeping (not the score API). */
-function ours(url: string) {
+/** A URL's path, if it's on this site. */
+function path(url: string) {
 	const u = new URL(url, self.location.origin);
-	return u.origin === self.location.origin && !u.pathname.startsWith('/api/');
+	return u.origin === self.location.origin ? u.pathname : '';
 }
+
+/** Files named by their content (code, styles, the font) and squid's icons: never stale. */
+const keepable = (p: string) => p.startsWith('/_app/immutable/') || p.startsWith('/squid/');
 
 self.addEventListener('fetch', (event) => {
 	const req = event.request;
-	if (req.method !== 'GET' || !ours(req.url)) return;
-	if (req.mode === 'navigate') {
+	if (req.method !== 'GET') return;
+	const p = path(req.url);
+	if (req.mode === 'navigate' && p === PAGE)
 		event.respondWith(fetch(req).catch(async () => (await caches.match(PAGE)) ?? Response.error()));
-		return;
-	}
-	event.respondWith(caches.match(req, { ignoreSearch: true }).then((hit) => hit ?? fetch(req)));
+	// Everything else (page data, the score API, other pages) goes to the network as usual.
+	else if (keepable(p))
+		event.respondWith(caches.match(req, { ignoreSearch: true }).then((hit) => hit ?? fetch(req)));
 });

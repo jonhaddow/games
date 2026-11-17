@@ -3,8 +3,8 @@
 export type Board = {
 	/** Its scores' key in the database, and its page (/boards/<key>). */
 	key: string;
-	/** Its tab on the boards page. */
-	tab: string;
+	/** Its tab on the boards page, if not the game's name. */
+	tab?: string;
 	/** What the board ranks, e.g. "Tallest tower". */
 	title: string;
 	/** Which way is better. */
@@ -42,7 +42,6 @@ export const GAMES: Game[] = [
 		boards: [
 			{
 				key: 'stack',
-				tab: 'Stack',
 				title: 'Tallest tower',
 				order: 'high',
 				max: 10_000,
@@ -58,7 +57,6 @@ export const GAMES: Game[] = [
 		boards: [
 			{
 				key: 'race',
-				tab: 'Race',
 				title: 'Fastest lap',
 				order: 'low',
 				max: 60 * 60 * 1000,
@@ -74,7 +72,6 @@ export const GAMES: Game[] = [
 		boards: [
 			{
 				key: 'squid',
-				tab: 'Squid',
 				title: 'Most friends in a Challenge',
 				order: 'high',
 				max: 1_000_000,
