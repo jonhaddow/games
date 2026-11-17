@@ -1,6 +1,8 @@
 <!-- The way back to the home screen from inside a game. Every game shows it in the
      same place with the same look (the home screen's, not the game's), on its own
-     menus and end screens, never mid-play. -->
+     menus and end screens, never mid-play. Colours and font are fixed because each
+     game redefines --ink, --display and friends. Stopping pointerdown keeps Stack
+     from starting a round, as it starts on a tap anywhere. -->
 <a class="games-button" href="/" onpointerdown={(e) => e.stopPropagation()}>
 	<svg viewBox="0 0 24 24" aria-hidden="true">
 		<rect x="3" y="3" width="8" height="8" rx="2" />

@@ -92,6 +92,17 @@
 		return () => query.removeEventListener('change', change);
 	});
 
+	// Installed as its own app (full screen, scope /squid), the Games button would
+	// take a kid out of the app, or to an error page offline, so it's only in the
+	// browser. iOS reports every home-screen app as standalone, so it's off in both there.
+	let inBrowser = $state(false);
+	onMount(() => {
+		inBrowser = !(
+			matchMedia('(display-mode: fullscreen)').matches ||
+			(navigator as { standalone?: boolean }).standalone === true
+		);
+	});
+
 	// Offline play (see src/service-worker.ts) and updates. iPads resume the
 	// home-screen app rather than relaunching it, so check for a new version
 	// each time it comes back on screen. Checks fail offline, which is fine.
@@ -342,7 +353,7 @@
 			</button>
 		</section>
 	{:else if !playing}
-		<GamesButton />
+		{#if inBrowser}<GamesButton />{/if}
 		<section class="start">
 			<h1>Squid Spells</h1>
 			{#if loaded}
