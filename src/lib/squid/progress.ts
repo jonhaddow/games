@@ -104,10 +104,9 @@ export function loadPlayer(store: Store): Player {
 		const saved = JSON.parse(store.getItem(KEY) ?? 'null') as Partial<Player>[] | null;
 		if (!Array.isArray(saved)) return fresh;
 		const { hats, ...rest } = (saved[0] ?? {}) as Partial<Player> & { hats?: Hat[] };
-		const player: Player & { name?: string; total?: number } = { ...fresh, ...rest };
-		// From before the games' profiles named the player, and from when there was a board for all games.
+		const player: Player & { name?: string } = { ...fresh, ...rest };
+		// From before the games' profiles named the player.
 		delete player.name;
-		delete player.total;
 		// A save from before `won`. One with both was written over by an older cached build: keep `won`.
 		if (hats && !rest.won) player.won = hats;
 		// Only colours from the palette: the drawing code needs a #rrggbb.
