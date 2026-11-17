@@ -66,7 +66,12 @@
 		if (sorted(grid)) void solved();
 	}
 
+	let stale = $state(false);
+
 	async function solved() {
+		// Opened before midnight, sorted after: today's board isn't for this puzzle.
+		stale = today() !== day;
+		if (stale) return;
 		newBest = best === null || moves < best;
 		if (newBest) best = moves;
 		const local = readLocal();
@@ -164,7 +169,13 @@
 			</p>
 			{#if saving}<p class="note">Saving…</p>{/if}
 			{#if saveFailed}<p class="note">Couldn’t save that one.</p>{/if}
-			<p class="note">A new puzzle tomorrow.</p>
+			{#if stale}
+				<p class="note">
+					That was yesterday’s puzzle, so it’s not on the board. Reload for today’s.
+				</p>
+			{:else}
+				<p class="note">A new puzzle tomorrow.</p>
+			{/if}
 			<div class="buttons">
 				<button class="big" onclick={again}>Try for fewer</button>
 				{#if signedIn}

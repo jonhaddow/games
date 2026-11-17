@@ -76,7 +76,7 @@ function path(cols: number, rows: number, rand: () => number) {
 		return false;
 	};
 	if (!walk(0, start)) {
-		// Can't happen on a grid of at least 2×2 (some path to the right exists), but be safe.
+		// Every route that's long enough is boxed in (it happens on small grids): go straight across.
 		route.length = 0;
 		for (let x = 0; x < cols; x++) route.push(start * cols + x);
 	}
@@ -93,7 +93,7 @@ export function generate(level: number, rand: () => number = Math.random): Puzzl
 	for (let k = 0; k + 1 < route.length; k++) {
 		const a = route[k];
 		const b = route[k + 1];
-		const step = STEPS.find((s) => a + s.dx + s.dy * cols === b && sameRowOrCol(a, b, cols))!;
+		const step = STEPS.find((s) => a + s.dx + s.dy * cols === b)!;
 		open[a] |= step.bit;
 		open[b] |= step.back;
 	}
@@ -118,9 +118,6 @@ export function generate(level: number, rand: () => number = Math.random): Puzzl
 	} while (flow(puzzle).solved);
 	return puzzle;
 }
-
-const sameRowOrCol = (a: number, b: number, cols: number) =>
-	Math.floor(a / cols) === Math.floor(b / cols) || a % cols === b % cols;
 
 /** Turns a tile a quarter clockwise (in place). */
 export function turn(puzzle: Puzzle, i: number) {
