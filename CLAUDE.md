@@ -9,6 +9,7 @@ The family games app at https://games.app.haddow.me: a home screen of games, one
 - Games post scores with `postScore` (`src/lib/scores.ts`) to `/api/scores/<game>`. `best` keeps one row per player per game. Games should post their device's best each time they show it, so scores from before a name was picked still count.
 - Scores are trusted from the client (household games); only sanity limits apply.
 - `e2e/fixtures.sql` seeds Sam and Kim, and the e2e tests rely on them.
+- Every game's menu and end screens show `GamesButton` (`src/lib/components/`), the one way back to `/`; never mid-play. A new game uses it rather than its own back link. Squid hides it when installed as its own app.
 - No secrets, no Tailwind. The only service worker is squid's (below).
 - The viewport, manifest and home-screen tags are in `+layout.svelte`, not `app.html`: `/squid` installs as its own app.
 

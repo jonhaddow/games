@@ -48,3 +48,12 @@ test('claim an existing player on another device', async ({ page }) => {
 	await expect(page).toHaveURL('/boards/stack');
 	await expect(page.locator('.rows li.me')).toContainText('Kim');
 });
+
+test('every game leads back to the home screen the same way', async ({ page }) => {
+	await page.setViewportSize({ width: 844, height: 390 }); // Squid wants landscape.
+	for (const path of ['/stack', '/race', '/squid']) {
+		await open(page, path);
+		await page.getByRole('link', { name: 'Games', exact: true }).click();
+		await expect(page).toHaveURL('/');
+	}
+});

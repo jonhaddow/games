@@ -1,4 +1,5 @@
 <script lang="ts">
+	import GamesButton from '#lib/components/GamesButton.svelte';
 	import '@fontsource/luckiest-guy';
 	import { onMount, untrack } from 'svelte';
 	import { dev } from '$app/env';
@@ -89,6 +90,17 @@
 		const change = () => (portrait = query.matches);
 		query.addEventListener('change', change);
 		return () => query.removeEventListener('change', change);
+	});
+
+	// Installed as its own app (full screen, scope /squid), the Games button would
+	// take a kid out of the app, or to an error page offline, so it's only in the
+	// browser. iOS reports every home-screen app as standalone, so it's off in both there.
+	let inBrowser = $state(false);
+	onMount(() => {
+		inBrowser = !(
+			matchMedia('(display-mode: fullscreen)').matches ||
+			(navigator as { standalone?: boolean }).standalone === true
+		);
 	});
 
 	// Offline play (see src/service-worker.ts) and updates. iPads resume the
@@ -341,6 +353,7 @@
 			</button>
 		</section>
 	{:else if !playing}
+		{#if inBrowser}<GamesButton />{/if}
 		<section class="start">
 			<h1>Squid Spells</h1>
 			{#if loaded}

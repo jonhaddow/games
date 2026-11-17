@@ -1,4 +1,5 @@
 <script lang="ts">
+	import GamesButton from '#lib/components/GamesButton.svelte';
 	import {
 		BLOCK_HEIGHT,
 		START_WIDTH,
@@ -305,12 +306,13 @@
 			<p>Tap to drop. Line them up.</p>
 			{#if best}<p class="best">Best {best}</p>{/if}
 		</div>
+		<GamesButton />
 		<nav class="corner" onpointerdown={(e) => e.stopPropagation()}>
-			<a href="/">← Games</a>
 			<a href="/boards/stack">Scores</a>
 		</nav>
 		<p class="hint">Tap to start</p>
 	{:else}
+		<GamesButton />
 		<div class="over" onpointerdown={(e) => e.stopPropagation()}>
 			<h2>{height}</h2>
 			<p class="label">{height === 1 ? 'block' : 'blocks'} high</p>
@@ -421,7 +423,7 @@
 		left: 16px;
 		right: 16px;
 		display: flex;
-		justify-content: space-between;
+		justify-content: flex-end;
 	}
 	.corner a {
 		display: block;
