@@ -1,6 +1,6 @@
 # Games
 
-A family games app: a home screen of small web games, with one profile and a leaderboard for each game.
+A family games app: a home screen of small web games, with one profile and leaderboards for each game.
 
 You pick a name and colour once, with no sign-in, and your best in each game goes on its board. Renaming yourself updates every board.
 
@@ -8,6 +8,7 @@ The games:
 
 - **Stack:** drop the sliding blocks to build the tallest tower. One thumb, on a canvas.
 - **Race:** three laps of a 3D motorbike track with hills and jumps, steered by tilting the phone.
+- **Squid Spells:** for younger kids. Draw the shape each sea creature shows to cast a spell and make it a friend, and win outfits for your squid. Plays offline once added to the home screen.
 
 ## Tech stack
 

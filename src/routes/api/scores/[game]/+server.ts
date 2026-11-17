@@ -2,12 +2,12 @@
 // Both answer with the board and the player ({ player: null } before this
 // device has picked a name; the score isn't kept then).
 import { error, json } from '@sveltejs/kit';
-import { byKey } from '#lib/games.ts';
+import { boardByKey } from '#lib/games.ts';
 import { standings, submit, validScore } from '#lib/server/scores.ts';
 import type { RequestEvent, RequestHandler } from './$types';
 
 function boardFor(game: string) {
-	const board = byKey(game)?.board;
+	const board = boardByKey(game);
 	if (!board) error(404, 'No such board');
 	return board;
 }

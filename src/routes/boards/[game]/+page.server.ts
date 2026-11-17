@@ -1,10 +1,10 @@
 import { error } from '@sveltejs/kit';
-import { byKey } from '#lib/games.ts';
+import { boardByKey } from '#lib/games.ts';
 import { standings } from '#lib/server/scores.ts';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
-	const board = byKey(params.game)?.board;
+	const board = boardByKey(params.game);
 	if (!board) error(404, 'No such board');
 	return {
 		game: params.game,

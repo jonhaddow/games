@@ -14,6 +14,8 @@ export default defineConfig({
 			adapter: adapter(
 				process.env.E2E_DB ? { platformProxy: { persist: { path: process.env.E2E_DB } } } : {}
 			),
+			// Squid Spells registers it itself, for its pages only.
+			serviceWorker: { register: false },
 			// SvelteKit adds nonces for its own inline scripts. Inline styles stay allowed:
 			// components set sizes with style attributes. The font is served with the app.
 			csp: {

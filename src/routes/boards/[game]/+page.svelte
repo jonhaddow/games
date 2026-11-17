@@ -1,12 +1,11 @@
 <script lang="ts">
-	import { GAMES, byKey } from '#lib/games.ts';
+	import { BOARDS, boardByKey } from '#lib/games.ts';
 	import Player from '#lib/components/Player.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-	let game = $derived(byKey(data.game)!);
-	let board = $derived(game.board!);
-	const boards = GAMES.filter((g) => g.board);
+	let board = $derived(boardByKey(data.game)!);
+	let game = $derived(board.game);
 </script>
 
 <svelte:head><title>{game.name} · Games</title></svelte:head>
@@ -18,8 +17,8 @@
 	</header>
 
 	<nav class="tabs" aria-label="Leaderboards">
-		{#each boards as g (g.key)}
-			<a href="/boards/{g.key}" aria-current={g.key === data.game ? 'page' : undefined}>{g.name}</a>
+		{#each BOARDS as b (b.key)}
+			<a href="/boards/{b.key}" aria-current={b.key === data.game ? 'page' : undefined}>{b.tab}</a>
 		{/each}
 	</nav>
 
