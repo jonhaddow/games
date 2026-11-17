@@ -1,7 +1,7 @@
 <script lang="ts">
 	import GamesButton from '#lib/components/GamesButton.svelte';
 	import { postScore } from '#lib/scores.ts';
-	import { MAX_ARROWS, levelFor, run, starsFor, type Dir, type Level } from './robot.ts';
+	import { MAX_ARROWS, levelFor, roll, run, starsFor, type Dir, type Level } from './robot.ts';
 
 	type Props = {
 		/** The player's most stars so far, or null before they've picked a name (then it's kept on this device). */
@@ -48,6 +48,7 @@
 		n = levelNumber;
 		level = levelFor(n);
 		program = [];
+		saveFailed = false;
 		reset();
 		phase = 'plan';
 	}
@@ -76,10 +77,11 @@
 		const steps: { cell: number; arrow: number }[] = [];
 		let from = level.start;
 		program.forEach((dir, i) => {
-			const { path } = run({ ...level, start: from }, [dir]);
-			for (const cell of path.slice(1)) steps.push({ cell, arrow: i });
-			from = path[path.length - 1];
-			if (path.length === 1) steps.push({ cell: from, arrow: i });
+			const cells = roll(level, from, dir);
+			for (const cell of cells) steps.push({ cell, arrow: i });
+			// An arrow that can't move still takes a beat.
+			if (!cells.length) steps.push({ cell: from, arrow: i });
+			from = cells.at(-1) ?? from;
 		});
 		const solved = run(level, program).solved;
 		let k = 0;
@@ -108,8 +110,7 @@
 		phase = 'won';
 		navigator.vibrate?.(20);
 		if (won <= (stars[n - 1] ?? 0)) return;
-		const next = [...stars];
-		for (let i = 0; i < n; i++) next[i] ??= 0;
+		const next = Array.from({ length: Math.max(stars.length, n) }, (_, i) => stars[i] ?? 0);
 		next[n - 1] = won;
 		stars = next;
 		localStorage.setItem(SAVE, JSON.stringify({ stars }));

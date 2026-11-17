@@ -26,7 +26,7 @@ export type Level = {
 };
 
 /** The cells the robot rolls through going one way from a cell, ending where it stops. */
-export function roll(level: Level, from: number, dir: Dir) {
+export function roll(level: Pick<Level, 'cols' | 'rows' | 'rocks'>, from: number, dir: Dir) {
 	const { dx, dy } = STEP[dir];
 	const cells: number[] = [];
 	let x = from % level.cols;
@@ -59,15 +59,16 @@ export function run(level: Level, program: Dir[]) {
 /** The fewest arrows that get every gem, or null if it can't be done. */
 export function solve(level: Omit<Level, 'par'>) {
 	const all = (1 << level.gems.length) - 1;
-	const lvl = { ...level, par: 0 };
-	const key = (cell: number, got: number) => cell * 64 + got;
+	// A state is where the robot is and which gems it has (a bit each).
+	const key = (cell: number, got: number) => got * level.cols * level.rows + cell;
 	const seen = new Set([key(level.start, 0)]);
 	let frontier = [{ cell: level.start, got: 0 }];
-	for (let moves = 1; frontier.length && moves <= 20; moves++) {
+	// Breadth first, so the first time every gem is got is the fewest moves.
+	for (let moves = 1; frontier.length; moves++) {
 		const next: typeof frontier = [];
 		for (const { cell, got } of frontier) {
 			for (const dir of DIRS) {
-				const cells = roll(lvl, cell, dir);
+				const cells = roll(level, cell, dir);
 				if (!cells.length) continue;
 				let g = got;
 				for (const c of cells) {
@@ -87,7 +88,7 @@ export function solve(level: Omit<Level, 'par'>) {
 }
 
 /** How big level n is, how many gems it has and the par it aims for. */
-export function levelShape(n: number) {
+function levelShape(n: number) {
 	return {
 		cols: Math.min(5 + Math.floor(n / 4), 7),
 		rows: Math.min(6 + Math.floor(n / 3), 9),
