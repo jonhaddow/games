@@ -1,6 +1,6 @@
 # Games
 
-The family games app at https://games.app.haddow.me: a home screen of games, one profile (name and colour, no sign-in) and leaderboards. Each game is a page here (`/stack`, `/race`, `/squid`, `/crops`). Stack's and race's old subdomains and repos (`~/code/stack`, `~/code/race`) are left as they were, to be closed or redirected; squid's hands devices over (below).
+The family games app at https://games.app.haddow.me: a home screen of games, one profile (name and colour, no sign-in) and leaderboards. Each game is a page here (`/stack`, `/race`, `/squid`, `/crops`). The old apps' subdomains and repos (`~/code/stack`, `~/code/race`, `~/code/squid`, `~/code/crops`) are left as they were, to be closed or redirected.
 
 ## Worth knowing
 
@@ -36,10 +36,8 @@ The family games app at https://games.app.haddow.me: a home screen of games, one
 A drawing game for younger kids, moved in from `~/code/squid` (squid.app.haddow.me). `src/lib/squid/`: `gestures.ts` (shape recognition) and `progress.ts` (saves, levels, waves) are pure and unit tested; `game.ts` is the loop, `sprites.ts` draws everything, `audio.ts` synthesises the sounds. `Squid.svelte` is the page.
 
 - Keep it for small kids: no reading needed, nothing scary, no losing in Chill. Watch frame rate on old tablets (no allocations in hot loops) and touch on iOS Safari.
-- The save is in `localStorage` (`squid-spells-v1`). Two boards: `squid` (best Challenge game) and `squid-total` (friends in every game). Rows show as squids in the profile colour.
+- The save is in `localStorage` (`squid-spells-v1`). One board, `squid`: most friends in one Challenge game. Rows show as squids in the profile colour. Saves on old devices stayed in the old app (iOS keeps each home-screen app's storage apart); its board's rows were copied in as profiles `squid:<device>`, which a player can claim on the profile page.
 - Its styles are scoped to the page (`:has(.squid)`). Its own manifest (`static/squid/`) makes it a separate home-screen app, landscape and full screen.
-- Moving from the old app: its last version sends each device to `/squid#import=<its storage>` (`handoff.ts`). The old board's rows were copied in as profiles `squid:<device>` (`scripts/squid-import.ts`); `/api/squid/link` gives that profile to the device, or merges it into the player already there (`src/lib/server/squid.ts`).
-- Once nobody opens the old app (squid.app.haddow.me), remove the hand-off: `importSave`, `/api/squid/link`, `server/squid.ts` and `scripts/squid-import.ts`.
 - E2E: `e2e/squid.spec.ts` reads `window.__squid.state`, and runs without race's software WebGL, which makes its fast-forwards too slow.
 
 ## Crops (`/crops`)

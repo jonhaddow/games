@@ -57,8 +57,6 @@ export type Player = {
 	level: number;
 	/** Most friends made in one hard-mode game: the leaderboard score. */
 	best: number;
-	/** Friends made in every game, both modes: the other leaderboard. */
-	total: number;
 	/** Prizes won so far (saved as `hats` from when only hats were won). */
 	won: Prize[];
 	hat: Hat | null;
@@ -89,7 +87,6 @@ export function newPlayer(): Player {
 		color: PALETTE[0],
 		level: 1,
 		best: 0,
-		total: 0,
 		won: [],
 		hat: null,
 		neck: null,
@@ -107,13 +104,12 @@ export function loadPlayer(store: Store): Player {
 		const saved = JSON.parse(store.getItem(KEY) ?? 'null') as Partial<Player>[] | null;
 		if (!Array.isArray(saved)) return fresh;
 		const { hats, ...rest } = (saved[0] ?? {}) as Partial<Player> & { hats?: Hat[] };
-		const player: Player & { name?: string } = { ...fresh, ...rest };
-		// From before the games' profiles named the player.
+		const player: Player & { name?: string; total?: number } = { ...fresh, ...rest };
+		// From before the games' profiles named the player, and from when there was a board for all games.
 		delete player.name;
+		delete player.total;
 		// A save from before `won`. One with both was written over by an older cached build: keep `won`.
 		if (hats && !rest.won) player.won = hats;
-		// A save from before `total`: a guess from its best game and easy-mode waves.
-		if (rest.total === undefined) player.total = player.best + (player.level - 1) * WAVE;
 		// Only colours from the palette: the drawing code needs a #rrggbb.
 		if (!PALETTE.includes(player.color)) player.color = fresh.color;
 		return player;

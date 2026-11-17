@@ -3,7 +3,6 @@
 	import '@fontsource/luckiest-guy';
 	import { onMount, untrack } from 'svelte';
 	import { keepOffline } from '#lib/offline.ts';
-	import { invalidateAll } from '$app/navigation';
 	import { updated } from '$app/state';
 	import SquidPreview from './SquidPreview.svelte';
 	import InstallHint from './InstallHint.svelte';
@@ -23,8 +22,7 @@
 		savePlayer,
 		type Look
 	} from './progress.ts';
-	import { syncBoards, type Boards } from './boards.ts';
-	import { importSave } from './handoff.ts';
+	import { syncBoard, type Row } from './boards.ts';
 
 	/** This device's player in the games, once they've picked a name: their row on the boards. */
 	let { name }: { name: string | null } = $props();
@@ -32,28 +30,15 @@
 	/** The device's one squid. Fresh until the save loads, and not shown till then. */
 	let player = $state(newPlayer());
 	let loaded = $state(false);
-	/** Linking an old squid's board scores to this player: the boards wait for it. */
-	let linking = $state(true);
 	/** The squid's been tapped on the start screen: choosing easy or hard. */
 	let chosen = $state(false);
 	/** In the dressing room, choosing a colour and things to wear. */
 	let dressing = $state(false);
 	/** The family leaderboard, once it's loaded (it stays empty offline). */
-	let boards = $state<Boards>({ best: [], total: [] });
-	/** Which board shows: best game or all games. */
-	let view = $state<keyof Boards>('best');
-	const board = $derived(boards[view]);
-	/** A trophy, on the Challenge button and the best-game board's button. */
+	let board = $state<Row[]>([]);
+	/** A trophy, on the Challenge button. */
 	const TROPHY =
 		'M7 3h10v2h3.5v2.5a4 4 0 0 1-4.2 4A5.5 5.5 0 0 1 13 14v3h3v3H8v-3h3v-3a5.5 5.5 0 0 1-3.3-2.5 4 4 0 0 1-4.2-4V5H7zM5.5 7v.5a2 2 0 0 0 1.6 2A6 6 0 0 1 7 7zm13 0H17a6 6 0 0 1-.1 2.5 2 2 0 0 0 1.6-2z';
-	/** A star, moved to (x, y) by its top point. */
-	const star = (x: number, y: number) =>
-		`M${x} ${y}l1.6 3.4 3.7.4-2.8 2.5.8 3.7-3.3-1.9-3.3 1.9.8-3.7-2.8-2.5 3.7-.4z`;
-	/** The board's two views: best game (a trophy) and all games added up (a pile of stars). */
-	const VIEWS = [
-		{ key: 'best', label: 'Best game', icon: [TROPHY] },
-		{ key: 'total', label: 'All games', icon: [star(12, 1), star(6, 11), star(18, 11)] }
-	] as const;
 	let width = $state(800);
 	let height = $state(400);
 	/** The big squid in the dressing room. */
@@ -69,20 +54,6 @@
 	let portrait = $state(false);
 
 	onMount(() => {
-		// A save from the old squid app (see handoff.ts), then its board scores.
-		const device = importSave(location, localStorage);
-		if (device) {
-			history.replaceState(history.state, '', location.pathname);
-			void fetch('/api/squid/link', {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ device })
-			})
-				.then((res) => res.json() as Promise<{ linked: boolean }>)
-				.then(({ linked }) => (linked ? invalidateAll() : undefined))
-				.catch(() => {})
-				.finally(() => (linking = false));
-		} else linking = false;
 		player = loadPlayer(localStorage);
 		loaded = true;
 		const query = matchMedia('(orientation: portrait)');
@@ -117,15 +88,12 @@
 	// Each time the start screen shows: post the squid's best and fetch the board.
 	$effect(() => {
 		// After the save loads, so it posts this squid's best, not a fresh one's.
-		if (!home || !loaded || linking) return;
-		// Re-run when the player's name arrives (picked, or linked from the old app): their scores go on the boards then.
+		if (!home || !loaded) return;
+		// Re-run when the player's name arrives: their best goes on the board then.
 		void name;
 		let live = true;
-		void syncBoards(untrack(() => $state.snapshot(player))).then((rows) => {
-			if (!live || !rows) return;
-			boards = rows;
-			// Only Chill played so far: open on the board that has someone on it.
-			if (!rows.best.length) view = 'total';
+		void syncBoard(untrack(() => player.best)).then((rows) => {
+			if (live && rows) board = rows;
 		});
 		return () => (live = false);
 	});
@@ -362,24 +330,9 @@
 							<a class="label pick-name" href="/profile?back=/squid">Pick a name</a>
 						{/if}
 					</div>
-					{#if boards.best.length || boards.total.length}
-						<!-- The family leaderboards, a row per device: best hard-mode game, or friends in all games. -->
+					{#if board.length}
+						<!-- The family leaderboard: most friends in one Challenge game, a row per player. -->
 						<div class="boards">
-							<div class="views">
-								{#each VIEWS as v (v.key)}
-									<button
-										class="block"
-										class:on={view === v.key}
-										aria-pressed={view === v.key}
-										aria-label={v.label}
-										onclick={() => (view = v.key)}
-									>
-										<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
-											{#each v.icon as d (d)}<path {d} />{/each}
-										</svg>
-									</button>
-								{/each}
-							</div>
 							<ol class="board" aria-label="High scores" style:--s="{squidlet}px">
 								{#each board as row, i (i)}
 									<li class:me={row.me} {@attach row.me ? showMe : undefined}>
@@ -650,23 +603,6 @@
 	.boards {
 		display: grid;
 		gap: 10px;
-	}
-	.views {
-		display: flex;
-		justify-content: center;
-		gap: 10px;
-	}
-	.views .block {
-		width: clamp(56px, 16vh, 84px);
-		height: clamp(40px, 11vh, 56px);
-		opacity: 0.55;
-	}
-	.views .block svg {
-		width: auto;
-		height: 75%;
-	}
-	.views .on {
-		opacity: 1;
 	}
 	.board {
 		margin: 0;

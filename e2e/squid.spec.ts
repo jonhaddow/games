@@ -1,6 +1,5 @@
 import { devices, expect, test, type Page } from '@playwright/test';
 import { guide, type Shape } from '../src/lib/squid/gestures.ts';
-import { exportLink } from '../src/lib/squid/handoff.ts';
 
 // Without race's software WebGL, which makes the canvas too slow for squid's long fast-forwards.
 test.use({
@@ -101,15 +100,14 @@ test('hard mode keeps going and speeds up every 10 friends', async ({ page }) =>
 	// The best hard game so far is saved, for the leaderboard.
 	const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('squid-spells-v1')!)[0]);
 	expect(saved.best).toBeGreaterThanOrEqual(10);
-	expect(saved.total).toBeGreaterThanOrEqual(10);
 });
 
-test('the start screen posts the scores and shows both leaderboards', async ({ page }) => {
+test('the start screen posts the best and shows the leaderboard', async ({ page }) => {
 	await page
 		.context()
 		.addCookies([{ name: 'games-profile', value: 'p-kim', url: 'http://localhost:5192' }]);
 	await page.addInitScript(() =>
-		localStorage.setItem('squid-spells-v1', JSON.stringify([{ best: 14, total: 50 }]))
+		localStorage.setItem('squid-spells-v1', JSON.stringify([{ best: 14 }]))
 	);
 	await page.goto('/squid');
 	await expect(page.getByText('Kim', { exact: true }).first()).toBeVisible();
@@ -119,8 +117,6 @@ test('the start screen posts the scores and shows both leaderboards', async ({ p
 		/2nd\s*Kim\s*14/,
 		/3rd\s*Squiddy\s*9/
 	]);
-	await page.getByLabel('All games').click();
-	await expect(board.getByRole('listitem').first()).toHaveText(/1st\s*Kim\s*50/);
 });
 
 test('without a name, it asks a grown-up to pick one', async ({ page }) => {
@@ -129,20 +125,6 @@ test('without a name, it asks a grown-up to pick one', async ({ page }) => {
 		'href',
 		'/profile?back=/squid'
 	);
-});
-
-test('a save from the old app moves in and brings its board scores', async ({ page }) => {
-	const link = exportLink({
-		'squid-spells-v1': JSON.stringify([{ best: 9, total: 40, hat: 'crown', won: ['crown'] }]),
-		'squid-device': '0b6e1c62-5d1e-4c1a-9a3e-2f1d8c7b6a50'
-	});
-	await page.goto(`/squid${link}`);
-	// This device takes over the old squid's profile, and the link is tidied away.
-	await expect(page.getByText('Squiddy', { exact: true }).first()).toBeVisible();
-	await expect(page).toHaveURL(/\/squid$/);
-	await expect(page.getByLabel('High score 9')).toBeVisible();
-	const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('squid-spells-v1')!)[0]);
-	expect(saved).toMatchObject({ hat: 'crown' });
 });
 
 test('wave 3 ends with the kraken: the others swim off and it takes 3 spells', async ({ page }) => {

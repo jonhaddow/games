@@ -19,7 +19,7 @@
 	<nav class="tabs" aria-label="Leaderboards">
 		{#each BOARDS as b (b.key)}
 			<a href="/boards/{b.key}" aria-current={b.key === data.game ? 'page' : undefined}
-				>{b.tab ?? b.game.name}</a
+				>{b.game.name}</a
 			>
 		{/each}
 	</nav>
