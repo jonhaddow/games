@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { testDb } from './test-db.ts';
-import { byKey } from '../games.ts';
+import { boardByKey } from '../games.ts';
 import { myBests, standings, submit, validScore } from './scores.ts';
 import { saveProfile } from './profiles.ts';
 import type { DB } from './db/index.ts';
 
-const stack = byKey('stack')!.board!;
-const race = byKey('race')!.board!;
+const stack = boardByKey('stack')!;
+const race = boardByKey('race')!;
 
 let db: DB;
 let alex: string;

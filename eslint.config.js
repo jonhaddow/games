@@ -22,7 +22,7 @@ export default defineConfig(
 		files: ['src/**/*.ts', 'src/**/*.svelte'],
 		languageOptions: {
 			parserOptions: {
-				project: ['./tsconfig.json'],
+				project: ['./tsconfig.json', './src/service-worker/tsconfig.json'],
 				tsconfigRootDir: import.meta.dirname
 			}
 		},

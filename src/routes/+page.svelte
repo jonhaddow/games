@@ -16,19 +16,19 @@
 
 	<ul class="tiles">
 		{#each GAMES as game (game.key)}
-			{@const mine = data.bests[game.key]}
 			<li class="tile">
 				<a class="play" href={game.path}>
 					<img src="/icons/{game.key}.png" alt="" width="96" height="96" />
 					<span class="name">{game.name}</span>
 					<span class="blurb">{game.blurb}</span>
 				</a>
-				{#if game.board}
-					<a class="board" href="/boards/{game.key}">
-						<span>{game.board.title}</span>
-						{#if mine !== undefined}<strong>You: {game.board.format(mine)}</strong>{/if}
+				{#each game.boards as board (board.key)}
+					{@const mine = data.bests[board.key]}
+					<a class="board" href="/boards/{board.key}">
+						<span>{board.title}</span>
+						{#if mine !== undefined}<strong>You: {board.format(mine)}</strong>{/if}
 					</a>
-				{/if}
+				{/each}
 			</li>
 		{/each}
 	</ul>
