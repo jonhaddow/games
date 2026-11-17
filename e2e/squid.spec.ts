@@ -112,7 +112,7 @@ test('the start screen posts the scores and shows both leaderboards', async ({ p
 		localStorage.setItem('squid-spells-v1', JSON.stringify([{ best: 14, total: 50 }]))
 	);
 	await page.goto('/squid');
-	await expect(page.getByText('Kim', { exact: true })).toBeVisible();
+	await expect(page.getByText('Kim', { exact: true }).first()).toBeVisible();
 	const board = page.getByRole('list', { name: 'High scores' });
 	await expect(board.getByRole('listitem')).toHaveText([
 		/1st\s*Sam\s*20/,
