@@ -8,6 +8,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	if (!board) error(404, 'No such board');
 	return {
 		game: params.game,
-		...(await standings(locals.db, params.game, board, locals.profile?.id ?? null))
+		...(await standings(locals.db, board, locals.profile?.id ?? null))
 	};
 };
