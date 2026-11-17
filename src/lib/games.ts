@@ -86,6 +86,13 @@ export const GAMES: Game[] = [
 				format: friends
 			}
 		]
+	},
+	{
+		key: 'crops',
+		name: 'Crops',
+		path: '/crops',
+		blurb: 'Grow a little farm, and a village round it',
+		boards: []
 	}
 ];
 

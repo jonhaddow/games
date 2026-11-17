@@ -51,9 +51,10 @@ test('claim an existing player on another device', async ({ page }) => {
 
 test('every game leads back to the home screen the same way', async ({ page }) => {
 	await page.setViewportSize({ width: 844, height: 390 }); // Squid wants landscape.
-	for (const path of ['/stack', '/race', '/squid']) {
+	for (const path of ['/stack', '/race', '/squid', '/crops']) {
 		await open(page, path);
 		await page.getByRole('link', { name: 'Games', exact: true }).click();
-		await expect(page).toHaveURL('/');
+		// Race's software-rendered 3D (headless) can take a while to let go of the page.
+		await expect(page).toHaveURL('/', { timeout: 20_000 });
 	}
 });

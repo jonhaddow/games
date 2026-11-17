@@ -3,15 +3,50 @@
      menus and end screens, never mid-play. Colours and font are fixed because each
      game redefines --ink, --display and friends. Stopping pointerdown keeps Stack
      from starting a round, as it starts on a tap anywhere. -->
-<a class="games-button" href="/" onpointerdown={(e) => e.stopPropagation()}>
-	<svg viewBox="0 0 24 24" aria-hidden="true">
-		<rect x="3" y="3" width="8" height="8" rx="2" />
-		<rect x="13" y="3" width="8" height="8" rx="2" />
-		<rect x="3" y="13" width="8" height="8" rx="2" />
-		<rect x="13" y="13" width="8" height="8" rx="2" />
-	</svg>
-	Games
-</a>
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { afterNavigate } from '$app/navigation';
+
+	type Props = {
+		/**
+		 * The game installs as its own home-screen app (full screen, its own scope).
+		 * There the button would take a kid out of the app, or to an error page
+		 * offline, so it only shows in the browser. iOS reports every home-screen
+		 * app as standalone, so it also shows when the game was opened from the
+		 * home screen here (an in-app navigation), as in the Games app.
+		 */
+		ownApp?: boolean;
+		/** In the game's own top bar rather than fixed in the corner. */
+		inline?: boolean;
+	};
+	let { ownApp = false, inline = false }: Props = $props();
+
+	/** Not installed as an app: known once it's in the browser. */
+	let inBrowser = $state(false);
+	onMount(() => {
+		inBrowser = !(
+			matchMedia('(display-mode: fullscreen)').matches ||
+			(navigator as { standalone?: boolean }).standalone === true
+		);
+	});
+	let fromHome = $state(false);
+	afterNavigate(({ from }) => {
+		if (from) fromHome = true;
+	});
+	const show = $derived(!ownApp || inBrowser || fromHome);
+</script>
+
+{#if show}
+	<a class="games-button" class:inline href="/" onpointerdown={(e) => e.stopPropagation()}>
+		<svg viewBox="0 0 24 24" aria-hidden="true">
+			<rect x="3" y="3" width="8" height="8" rx="2" />
+			<rect x="13" y="3" width="8" height="8" rx="2" />
+			<rect x="3" y="13" width="8" height="8" rx="2" />
+			<rect x="13" y="13" width="8" height="8" rx="2" />
+		</svg>
+		Games
+	</a>
+{/if}
 
 <style>
 	.games-button {
@@ -33,7 +68,12 @@
 			system-ui,
 			sans-serif;
 		text-decoration: none;
+		/* Crops' top bar lets taps through to the world (pointer-events: none). */
+		pointer-events: auto;
 		-webkit-tap-highlight-color: transparent;
+	}
+	.inline {
+		position: static;
 	}
 	.games-button:active {
 		transform: translate(2px, 2px);

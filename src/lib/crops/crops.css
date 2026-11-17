@@ -1,0 +1,90 @@
+/* Crops' look: a pixel-art village with chunky ink outlines, a pixel display
+   face, and big controls for small fingers on a tablet. Only while Crops is
+   open (:has(.crops)). :where() keeps the element rules as weak as they were,
+   so the game's own classes win. */
+:root:has(.crops) {
+	--ink: #3b2a1e;
+	--sky: #8fd3f4;
+	--sky-low: #d6f1fb;
+	--grass: #7cc75b;
+	--grass-dark: #5aa83e;
+	--soil-dry: #a8714a;
+	--soil-wet: #6b4229;
+	--wood: #b9783f;
+	--wood-dark: #8d5527;
+	--straw: #f2c56b;
+	--leaf: #3f9b3a;
+	--leaf-light: #8fd16a;
+	--carrot: #f5862b;
+	--berry: #e8423f;
+	--berry-light: #f79b8f;
+	--pumpkin: #f39a1d;
+	--pumpkin-light: #f8c15c;
+	--egg: #fbeccf;
+	--sun: #ffc93c;
+	--sun-light: #ffe58a;
+	--water: #49aef0;
+	--seed: #e7c48c;
+	--card: #fff8e8;
+	--straw-light: #ffe7a8;
+	--font: 'Pixelify Sans Variable', monospace;
+	/* Numbers get a font with clear digits (Pixelify's 5 looks like an S). */
+	--num: 'Press Start 2P', monospace;
+	--outline: 4px solid var(--ink);
+	--lift: 0 6px 0 var(--ink);
+}
+
+html:has(.crops),
+html:has(.crops) body {
+	height: 100%;
+	overflow: hidden;
+	overscroll-behavior: none;
+}
+
+html:has(.crops) body {
+	font: 700 16px/normal var(--font);
+	color: var(--ink);
+	background: #2f7a2c;
+	/* Taps, not text selection, zooms or long-press menus. */
+	-webkit-user-select: none;
+	user-select: none;
+	-webkit-touch-callout: none;
+	-webkit-tap-highlight-color: transparent;
+	touch-action: manipulation;
+}
+
+:where(.crops) button {
+	font: inherit;
+	color: inherit;
+	border: var(--outline);
+	border-radius: 6px;
+	background: var(--card);
+	box-shadow: var(--lift);
+	padding: 0;
+	cursor: pointer;
+	transition: transform 80ms;
+}
+
+:where(.crops) button:active {
+	transform: translateY(4px);
+	box-shadow: 0 2px 0 var(--ink);
+}
+
+:where(.crops) button:disabled {
+	opacity: 0.45;
+	cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:where(.crops) *,
+	:where(.crops) *::before,
+	:where(.crops) *::after {
+		animation: none !important;
+	}
+}
+
+:where(.crops) .num {
+	font-family: var(--num);
+	font-size: 0.7em;
+	font-weight: 400;
+}

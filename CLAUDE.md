@@ -1,6 +1,6 @@
 # Games
 
-The family games app at https://games.app.haddow.me: a home screen of games, one profile (name and colour, no sign-in) and leaderboards. Each game is a page here (`/stack`, `/race`, `/squid`). Stack's and race's old subdomains and repos (`~/code/stack`, `~/code/race`) are left as they were, to be closed or redirected; squid's hands devices over (below).
+The family games app at https://games.app.haddow.me: a home screen of games, one profile (name and colour, no sign-in) and leaderboards. Each game is a page here (`/stack`, `/race`, `/squid`, `/crops`). Stack's and race's old subdomains and repos (`~/code/stack`, `~/code/race`) are left as they were, to be closed or redirected; squid's hands devices over (below).
 
 ## Worth knowing
 
@@ -9,9 +9,11 @@ The family games app at https://games.app.haddow.me: a home screen of games, one
 - Games post scores with `postScore` (`src/lib/scores.ts`) to `/api/scores/<game>`. `best` keeps one row per player per game. Games should post their device's best each time they show it, so scores from before a name was picked still count.
 - Scores are trusted from the client (household games); only sanity limits apply.
 - `e2e/fixtures.sql` seeds Sam and Kim, and the e2e tests rely on them.
-- Every game's menu and end screens show `GamesButton` (`src/lib/components/`), the one way back to `/`; never mid-play. A new game uses it rather than its own back link. Squid hides it when installed as its own app.
-- No secrets, no Tailwind. The only service worker is squid's (below).
-- The viewport, manifest and home-screen tags are in `+layout.svelte`, not `app.html`: `/squid` installs as its own app.
+- Every game's menu and end screens show `GamesButton` (`src/lib/components/`), the one way back to `/`; never mid-play. A new game uses it rather than its own back link. With `ownApp` (Squid, Crops) it hides when installed as its own app.
+- No secrets, no Tailwind.
+- Squid and Crops install as their own home-screen apps: their manifests and icons are in `static/<game>/`, their head tags in `+layout.svelte` (`APPS`). Each registers the one service worker (`src/service-worker/`) with its own scope via `keepOffline` (`src/lib/offline.ts`): the page sends it the files it loaded to keep, and the page itself is network first.
+- The viewport, manifest and home-screen tags are in `+layout.svelte`, not `app.html`.
+- Planned features: `docs/roadmap.md`.
 
 ## Stack (`/stack`)
 
@@ -36,7 +38,25 @@ A drawing game for younger kids, moved in from `~/code/squid` (squid.app.haddow.
 - Keep it for small kids: no reading needed, nothing scary, no losing in Chill. Watch frame rate on old tablets (no allocations in hot loops) and touch on iOS Safari.
 - The save is in `localStorage` (`squid-spells-v1`). Two boards: `squid` (best Challenge game) and `squid-total` (friends in every game). Rows show as squids in the profile colour.
 - Its styles are scoped to the page (`:has(.squid)`). Its own manifest (`static/squid/`) makes it a separate home-screen app, landscape and full screen.
-- Offline: `src/service-worker/` is registered from the page with scope `/squid` (SvelteKit's auto-register is off). The page sends it the files it loaded to keep; the page itself is network first.
 - Moving from the old app: its last version sends each device to `/squid#import=<its storage>` (`handoff.ts`). The old board's rows were copied in as profiles `squid:<device>` (`scripts/squid-import.ts`); `/api/squid/link` gives that profile to the device, or merges it into the player already there (`src/lib/server/squid.ts`).
 - Once nobody opens the old app (squid.app.haddow.me), remove the hand-off: `importSave`, `/api/squid/link`, `server/squid.ts` and `scripts/squid-import.ts`.
 - E2E: `e2e/squid.spec.ts` reads `window.__squid.state`, and runs without race's software WebGL, which makes its fast-forwards too slow.
+
+## Crops (`/crops`)
+
+A top-down pixel-art farming game for younger kids on a tablet (touch, landscape first), moved in from `~/code/crops`. Tap to walk round a village and use things: farm a field (more land to buy), keep chickens, cows and sheep, fish in the pond, help villagers, shop at the market, ride a horse, and buy house upgrades, decorations and a statue from the builder. No board. The old app (crops.app.haddow.me) is left running as it was: its farms stay in its own storage (iOS keeps each home-screen app's apart), so nothing moves across.
+
+- The farm saves to localStorage (`crops-farm`), so `Crops.svelte` only renders in the browser; the page is still server-rendered, so it opens offline.
+- `src/lib/crops/game.ts` holds all the rules: pure functions on a plain JSON `Farm`, unit tested. Keep it that way, and keep `parseFarm` accepting old saves: a child's farm must never be wiped by an update.
+- `Farm.animals` holds one timer per animal; the market sells more (up to a limit) and buys them back, but never the last of a kind. `Farm.plots.length` is the land owned: 12 to start, then strips (`LAND`) in `PLOTS` order: the main field 4 at a time, then the north field behind home 6 at a time. Version 3 saves (3×3 field) are moved onto the same tiles.
+- The builder: `Farm.home` counts house upgrades (`HOME`), `Farm.decor` lists what's built (`DECOR`) and `Farm.statue` is the one statue. The fountain site and plinth are always there (blocking, in `BUILDINGS`), and only their look changes; lamps, flower beds and bunting are drawn where you can walk (`LAMPS`, `BEDS`, `BUNTING`).
+- Growth uses real timestamps, so crops keep growing while the game is closed.
+- `src/lib/crops/world/`: `map.ts` (terrain, buildings, people; built in code), `interact.ts` (what's on a tile, and so what tapping it does: pure, tested), `path.ts` (shortest walk, breadth first: pure, tested), `engine.ts` (canvas loop: walking routes, camera, wandering animals, riding, fishing line), `sprites.ts` (all the pixel art).
+- Tapping something walks beside it, faces it and uses it (`act` in `Crops.svelte`). Animals hold still while you walk to them. A horse can't go on the crops, so tapping a plot it can't reach hops off first. Animals keep clear of the tiles by their gates.
+- Art is drawn in code: flat rectangles on small canvases with an automatic 1px ink outline, at 16px per tile, scaled up to about 64px on a tablet. No image files apart from the icons. Menus show sprites as data URLs.
+- `map.spec.ts` checks every plot, person, building and the horse can be reached from the start: run it after moving things on the map. A saved position that ends up blocked resets to the start.
+- Its look is in `crops.css`, scoped to the page (`:has(.crops)`). Numbers use Press Start 2P; words use Pixelify Sans (its 5 looks like an S).
+- There's no menu screen, so the Games button sits in its top bar, beside the coins.
+- Kid rules: nothing dies or is lost, icons over words, big touch targets, and `rescue()` hands over a carrot seed if the farm is ever stuck. Watch touch on iPad Safari.
+- In dev, `window.world` is the engine: e2e tests (`e2e/crops.spec.ts`, landscape iPad) tap tiles with `world.screenOf(x, y)`.
+- `node scripts/crops-shot.mjs <url> <out.png> [w] [h] [farm.json]` screenshots it with a given save.

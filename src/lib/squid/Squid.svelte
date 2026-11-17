@@ -2,7 +2,7 @@
 	import GamesButton from '#lib/components/GamesButton.svelte';
 	import '@fontsource/luckiest-guy';
 	import { onMount, untrack } from 'svelte';
-	import { dev } from '$app/env';
+	import { keepOffline } from '#lib/offline.ts';
 	import { invalidateAll } from '$app/navigation';
 	import { updated } from '$app/state';
 	import SquidPreview from './SquidPreview.svelte';
@@ -92,41 +92,17 @@
 		return () => query.removeEventListener('change', change);
 	});
 
-	// Installed as its own app (full screen, scope /squid), the Games button would
-	// take a kid out of the app, or to an error page offline, so it's only in the
-	// browser. iOS reports every home-screen app as standalone, so it's off in both there.
-	let inBrowser = $state(false);
-	onMount(() => {
-		inBrowser = !(
-			matchMedia('(display-mode: fullscreen)').matches ||
-			(navigator as { standalone?: boolean }).standalone === true
-		);
-	});
-
 	// Offline play (see src/service-worker.ts) and updates. iPads resume the
 	// home-screen app rather than relaunching it, so check for a new version
 	// each time it comes back on screen. Checks fail offline, which is fine.
 	onMount(() => {
-		// Not in dev, where files aren't named by their content and would go stale.
-		const sw = navigator.serviceWorker;
-		const keep = async () => {
-			const reg = await sw.register('/service-worker.js', { scope: '/squid' });
-			await sw.ready;
-			// What this page loaded (code, font): the copy to play offline.
-			const urls = performance.getEntriesByType('resource').map((e) => e.name);
-			reg.active?.postMessage({ type: 'keep', urls });
-		};
-		const loaded = () => void keep().catch(() => {});
-		if (sw && !dev) {
-			if (document.readyState === 'complete') loaded();
-			else addEventListener('load', loaded, { once: true });
-		}
+		const stopKeeping = keepOffline('/squid');
 		const check = () => {
 			if (document.visibilityState === 'visible') updated.check().catch(() => {});
 		};
 		document.addEventListener('visibilitychange', check);
 		return () => {
-			removeEventListener('load', loaded);
+			stopKeeping();
 			document.removeEventListener('visibilitychange', check);
 		};
 	});
@@ -353,7 +329,7 @@
 			</button>
 		</section>
 	{:else if !playing}
-		{#if inBrowser}<GamesButton />{/if}
+		<GamesButton ownApp />
 		<section class="start">
 			<h1>Squid Spells</h1>
 			{#if loaded}
