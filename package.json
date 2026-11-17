@@ -60,8 +60,10 @@
 	},
 	"dependencies": {
 		"@fontsource-variable/big-shoulders-stencil": "^5.3.0",
+		"@fontsource-variable/pixelify-sans": "^5.3.0",
 		"@fontsource/bungee": "^5.3.0",
 		"@fontsource/luckiest-guy": "^5.3.0",
+		"@fontsource/press-start-2p": "^5.3.0",
 		"@fontsource/russo-one": "^5.3.0",
 		"three": "^0.187.0"
 	}

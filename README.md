@@ -9,6 +9,7 @@ The games:
 - **Stack:** drop the sliding blocks to build the tallest tower. One thumb, on a canvas.
 - **Race:** three laps of a 3D motorbike track with hills and jumps, steered by tilting the phone.
 - **Squid Spells:** for younger kids. Draw the shape each sea creature shows to cast a spell and make it a friend, and win outfits for your squid. Plays offline once added to the home screen.
+- **Crops:** for younger kids on a tablet. A gentle pixel-art farm: tap to walk round the village, grow crops, look after animals, fish, help villagers and spend coins on the farm and village. Nothing ever dies, and the farm keeps growing while the game is closed. No leaderboard. Plays offline once added to the home screen.
 
 ## Tech stack
 

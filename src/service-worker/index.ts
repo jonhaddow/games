@@ -1,18 +1,19 @@
-// Offline play for Squid Spells, and only for it: registered with the scope
-// /squid, so the rest of the games always go to the network.
+// Offline play for the games that install as their own app (Squid Spells,
+// Crops). Each registers this file with its own scope (/squid, /crops), so
+// each gets its own copy, and the rest of the site always goes to the network.
 //
-// The squid page is server-rendered (it shows the player's name), and the
-// files it needs aren't known here, so this keeps a copy of what the page
-// actually used: each time it loads online, it sends the list (KEEP), and the
-// copy becomes exactly that. The page itself comes from the network when it
+// The files a game's page needs aren't known here, so this keeps a copy of
+// what the page actually used: each time it loads online, it sends the list
+// (KEEP), and the copy becomes exactly that. The page itself comes from the network when it
 // can (so a new deploy shows up), from the copy when it can't; its files,
 // named by their content, come from the copy first.
 import { self } from '$app/service-worker';
 
-const CACHE = 'squid';
-const PAGE = '/squid';
+/** The game's page, e.g. /squid, from the scope it registered with; also its cache's name. */
+const PAGE = new URL(self.registration.scope).pathname.replace(/\/$/, '');
+const CACHE = PAGE.slice(1);
 
-/** From the squid page: the files it loaded. */
+/** From the game's page: the files it loaded. */
 type Keep = { type: 'keep'; urls: string[] };
 
 self.addEventListener('install', () => void self.skipWaiting());
@@ -41,8 +42,8 @@ function path(url: string) {
 	return u.origin === self.location.origin ? u.pathname : '';
 }
 
-/** Files named by their content (code, styles, the font) and squid's icons: never stale. */
-const keepable = (p: string) => p.startsWith('/_app/immutable/') || p.startsWith('/squid/');
+/** Files named by their content (code, styles, fonts) and the game's icons: never stale. */
+const keepable = (p: string) => p.startsWith('/_app/immutable/') || p.startsWith(`${PAGE}/`);
 
 self.addEventListener('fetch', (event) => {
 	const req = event.request;
