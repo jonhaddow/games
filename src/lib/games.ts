@@ -124,6 +124,21 @@ export const GAMES: Game[] = [
 				daily: true
 			}
 		]
+	},
+	{
+		key: 'robot',
+		name: 'Robot Path',
+		path: '/robot',
+		blurb: 'Plan the moves, grab the gems',
+		boards: [
+			{
+				key: 'robot',
+				title: 'Most stars',
+				order: 'high',
+				max: 1_000_000,
+				format: (n) => `${n} ${n === 1 ? 'star' : 'stars'}`
+			}
+		]
 	}
 ];
 

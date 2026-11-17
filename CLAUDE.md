@@ -1,6 +1,6 @@
 # Games
 
-The family games app at https://games.app.haddow.me: a home screen of games, one profile (name and colour, no sign-in) and leaderboards. Each game is a page here (`/stack`, `/race`, `/squid`, `/crops`, `/pipes`, `/slide`). The old apps' subdomains and repos (`~/code/stack`, `~/code/race`, `~/code/squid`, `~/code/crops`) are left as they were, to be closed or redirected.
+The family games app at https://games.app.haddow.me: a home screen of games, one profile (name and colour, no sign-in) and leaderboards. Each game is a page here (`/stack`, `/race`, `/squid`, `/crops`, `/pipes`, `/slide`, `/robot`). The old apps' subdomains and repos (`~/code/stack`, `~/code/race`, `~/code/squid`, `~/code/crops`) are left as they were, to be closed or redirected.
 
 ## Worth knowing
 
@@ -71,3 +71,10 @@ A top-down pixel-art farming game for younger kids on a tablet (touch, landscape
 - `src/lib/slide/slide.ts` is the rules: pure and unit tested. The day's puzzle is seeded from the date (`puzzleFor`), mixed up by `PAR` slides that each change something, so par can always be met.
 - Its board is daily (above). The device's best for the day is in `localStorage` (`slide-best`, with the date). One slide per swipe.
 - The e2e test solves it by undoing the mix that `puzzleFor` returns.
+
+## Robot Path (`/robot`)
+
+- `src/lib/robot/robot.ts` is the rules (rolling, running a program, the fewest-moves search, levels): pure and unit tested. `Robot.svelte` is the page.
+- Level n is seeded from n, so it's the same for everyone; `levelFor` retries layouts until `solve` gives the par `levelShape` wants. Tuning: `levelShape` (size, gems, par) and `starsFor`.
+- Missing a gem never loses: the robot goes back to the start with the moves kept.
+- The save is `localStorage` `robot-v1` (stars per level); the board is total stars.
