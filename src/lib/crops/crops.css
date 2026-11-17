@@ -1,6 +1,7 @@
 /* Crops' look: a pixel-art village with chunky ink outlines, a pixel display
    face, and big controls for small fingers on a tablet. Only while Crops is
-   open (:has(.crops)), and :where() keeps these as weak as plain element rules. */
+   open (:has(.crops)). :where() keeps the element rules as weak as they were,
+   so the game's own classes win. */
 :root:has(.crops) {
 	--ink: #3b2a1e;
 	--sky: #8fd3f4;
@@ -25,7 +26,6 @@
 	--water: #49aef0;
 	--seed: #e7c48c;
 	--card: #fff8e8;
-
 	--straw-light: #ffe7a8;
 	--font: 'Pixelify Sans Variable', monospace;
 	/* Numbers get a font with clear digits (Pixelify's 5 looks like an S). */

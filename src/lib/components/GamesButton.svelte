@@ -5,13 +5,15 @@
      from starting a round, as it starts on a tap anywhere. -->
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { afterNavigate } from '$app/navigation';
 
 	type Props = {
 		/**
 		 * The game installs as its own home-screen app (full screen, its own scope).
 		 * There the button would take a kid out of the app, or to an error page
 		 * offline, so it only shows in the browser. iOS reports every home-screen
-		 * app as standalone, so on iOS it's off in the Games app too.
+		 * app as standalone, so it also shows when the game was opened from the
+		 * home screen here (an in-app navigation), as in the Games app.
 		 */
 		ownApp?: boolean;
 		/** In the game's own top bar rather than fixed in the corner. */
@@ -27,7 +29,11 @@
 			(navigator as { standalone?: boolean }).standalone === true
 		);
 	});
-	const show = $derived(!ownApp || inBrowser);
+	let fromHome = $state(false);
+	afterNavigate(({ from }) => {
+		if (from) fromHome = true;
+	});
+	const show = $derived(!ownApp || inBrowser || fromHome);
 </script>
 
 {#if show}
@@ -62,6 +68,7 @@
 			system-ui,
 			sans-serif;
 		text-decoration: none;
+		/* Crops' top bar lets taps through to the world (pointer-events: none). */
 		pointer-events: auto;
 		-webkit-tap-highlight-color: transparent;
 	}

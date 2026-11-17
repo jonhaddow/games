@@ -54,6 +54,7 @@ test('every game leads back to the home screen the same way', async ({ page }) =
 	for (const path of ['/stack', '/race', '/squid', '/crops']) {
 		await open(page, path);
 		await page.getByRole('link', { name: 'Games', exact: true }).click();
-		await expect(page).toHaveURL('/');
+		// Race's software-rendered 3D (headless) can take a while to let go of the page.
+		await expect(page).toHaveURL('/', { timeout: 20_000 });
 	}
 });

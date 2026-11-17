@@ -4,9 +4,9 @@
 //
 // The files a game's page needs aren't known here, so this keeps a copy of
 // what the page actually used: each time it loads online, it sends the list
-// (KEEP), and the copy becomes exactly that. The page itself comes from the network when it
-// can (so a new deploy shows up), from the copy when it can't; its files,
-// named by their content, come from the copy first.
+// (KEEP), and the copy becomes exactly that. The page itself comes from the
+// network when it can (so a new deploy shows up), from the copy when it can't;
+// its files, named by their content, come from the copy first.
 import { self } from '$app/service-worker';
 
 /** The game's page, e.g. /squid, from the scope it registered with; also its cache's name. */

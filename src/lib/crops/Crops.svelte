@@ -455,7 +455,7 @@
 						<span class="num" data-testid="basket-{item}">{farm.basket[item]}</span>
 					</span>
 				{:else}
-					<span class="empty">Empty</span>
+					<span class="none">Empty</span>
 				{/each}
 			{:else}
 				<span class="num" data-testid="basket-total">{basketTotal}</span>
@@ -781,7 +781,7 @@
 		gap: 0.2rem;
 	}
 
-	.empty {
+	.none {
 		font-size: 1.2rem;
 		padding: 0.3rem 0;
 	}

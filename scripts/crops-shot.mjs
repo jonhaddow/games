@@ -1,5 +1,5 @@
 // Screenshots the game, optionally with a saved farm (a JSON file in the
-// localStorage format, see parseFarm in src/lib/game.ts).
+// localStorage format, see parseFarm in src/lib/crops/game.ts).
 // Usage: node scripts/crops-shot.mjs <url, e.g. http://localhost:5192/crops> <out.png> [width] [height] [farm.json]
 // Defaults to a landscape iPad (1180×820). Prints page errors.
 import { chromium } from '@playwright/test';
