@@ -4,6 +4,7 @@
 	import '@fontsource/russo-one/latin.css';
 	import { LAPS, RECORD_KEY, formatTime } from '#lib/race/race.ts';
 	import { postScore } from '#lib/scores.ts';
+	import GamesButton from '#lib/components/GamesButton.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -146,6 +147,7 @@
 	<canvas {@attach mount} aria-label="Race track"></canvas>
 
 	{#if !hud || hud.phase === 'menu'}
+		<GamesButton />
 		<section class="menu">
 			<h1>Race<span>.</span></h1>
 			<p class="tag">Three laps. Big hills. Bigger jumps.</p>
@@ -159,7 +161,6 @@
 			</p>
 			{#if hud?.bestLap}<p class="record">Best lap {formatTime(hud.bestLap)}</p>{/if}
 			<p class="links">
-				<a href="/">← Games</a>
 				{#if data.player}
 					<a href="/boards/race">Leaderboard{rank ? ` · you’re ${ordinal(rank)}` : ''}</a>
 				{:else}
@@ -224,6 +225,7 @@
 	{/if}
 
 	{#if hud?.phase === 'finished' && hud.result}
+		<GamesButton />
 		<section class="sheet" data-testid="result">
 			<p class="flag">Finished</p>
 			<h2>{ordinal(hud.result.position)}</h2>

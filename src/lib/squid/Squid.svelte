@@ -1,4 +1,5 @@
 <script lang="ts">
+	import GamesButton from '#lib/components/GamesButton.svelte';
 	import '@fontsource/luckiest-guy';
 	import { onMount, untrack } from 'svelte';
 	import { dev } from '$app/env';
@@ -341,6 +342,7 @@
 			</button>
 		</section>
 	{:else if !playing}
+		<GamesButton />
 		<section class="start">
 			<h1>Squid Spells</h1>
 			{#if loaded}
