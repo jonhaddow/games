@@ -2,7 +2,7 @@
 // Both answer with the board and the player ({ player: null } before this
 // device has picked a name; the score isn't kept then).
 import { error, json } from '@sveltejs/kit';
-import { boardByKey } from '#lib/games.ts';
+import { boardByKey, scoreKey } from '#lib/games.ts';
 import { standings, submit, validScore } from '#lib/server/scores.ts';
 import type { RequestEvent, RequestHandler } from './$types';
 
@@ -16,7 +16,7 @@ async function reply({ params, locals }: RequestEvent) {
 	const p = locals.profile;
 	return json({
 		player: p && { name: p.name, colour: p.colour },
-		...(await standings(locals.db, params.game, boardFor(params.game), p?.id ?? null))
+		...(await standings(locals.db, boardFor(params.game), p?.id ?? null))
 	});
 }
 
@@ -27,6 +27,6 @@ export const POST: RequestHandler = async (event) => {
 	const board = boardFor(params.game);
 	const { value } = (await request.json().catch(() => ({}))) as { value?: unknown };
 	if (!validScore(board, value)) error(400, 'Bad score');
-	if (locals.profile) await submit(locals.db, params.game, board, locals.profile.id, value);
+	if (locals.profile) await submit(locals.db, scoreKey(board), board, locals.profile.id, value);
 	return reply(event);
 };

@@ -1,12 +1,13 @@
 # Games
 
-The family games app at https://games.app.haddow.me: a home screen of games, one profile (name and colour, no sign-in) and leaderboards. Each game is a page here (`/stack`, `/race`, `/squid`, `/crops`). The old apps' subdomains and repos (`~/code/stack`, `~/code/race`, `~/code/squid`, `~/code/crops`) are left as they were, to be closed or redirected.
+The family games app at https://games.app.haddow.me: a home screen of games, one profile (name and colour, no sign-in) and leaderboards. Each game is a page here (`/stack`, `/race`, `/squid`, `/crops`, `/pipes`, `/slide`). The old apps' subdomains and repos (`~/code/stack`, `~/code/race`, `~/code/squid`, `~/code/crops`) are left as they were, to be closed or redirected.
 
 ## Worth knowing
 
 - `src/lib/games.ts` lists the games and their boards (a game can have several; each board's `key` is its scores' key and URL). Adding a game or a board starts there. Tile icons are in `static/icons/`.
 - A profile is a random id in the `games-profile` cookie (HttpOnly, host-only). The profile page lists everyone, to claim a name ("That's me") on another device instead of making a duplicate. Anyone can claim anyone, which is fine for a household.
 - Games post scores with `postScore` (`src/lib/scores.ts`) to `/api/scores/<game>`. `best` keeps one row per player per game. Games should post their device's best each time they show it, so scores from before a name was picked still count.
+- A board with `daily: true` starts afresh each day (London time): its scores are kept under `<key>:<date>` (`scoreKey`), and the server picks the day, so the client just posts to `/api/scores/<key>`.
 - Scores are trusted from the client (household games); only sanity limits apply.
 - `e2e/fixtures.sql` seeds Sam and Kim, and the e2e tests rely on them.
 - Every game's menu and end screens show `GamesButton` (`src/lib/components/`), the one way back to `/`; never mid-play. A new game uses it rather than its own back link. With `ownApp` (Squid, Crops) it hides when installed as its own app.
@@ -58,3 +59,15 @@ A top-down pixel-art farming game for younger kids on a tablet (touch, landscape
 - Kid rules: nothing dies or is lost, icons over words, big touch targets, and `rescue()` hands over a carrot seed if the farm is ever stuck. Watch touch on iPad Safari.
 - In dev, `window.world` is the engine: e2e tests (`e2e/crops.spec.ts`, landscape iPad) tap tiles with `world.screenOf(x, y)`.
 - `node scripts/crops-shot.mjs <url> <out.png> [w] [h] [farm.json]` screenshots it with a given save.
+
+## Pipes (`/pipes`)
+
+- `src/lib/pipes/pipes.ts` is the rules (tiles as N/E/S/W bitmasks, the generator, where the water flows): pure and unit tested. `Pipes.svelte` draws it with SVG tiles, no canvas.
+- The generator walks a winding route from the tap to the plant, fills the rest with decoys, then turns every tile at random. Each tile keeps `home` (how it was made), which the e2e test uses to solve it.
+- Tuning: grid size in `levelSize`, the clock in `START_TIME` and `levelBonus`. The best is in `localStorage` (`pipes-best`).
+
+## Slide Sort (`/slide`)
+
+- `src/lib/slide/slide.ts` is the rules: pure and unit tested. The day's puzzle is seeded from the date (`puzzleFor`), mixed up by `PAR` slides that each change something, so par can always be met.
+- Its board is daily (above). The device's best for the day is in `localStorage` (`slide-best`, with the date). One slide per swipe.
+- The e2e test solves it by undoing the mix that `puzzleFor` returns.

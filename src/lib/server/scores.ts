@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, gt, lt, sql } from 'drizzle-orm';
-import type { Board } from '../games.ts';
+import { BOARDS, scoreKey, type Board } from '../games.ts';
 import { best, profile } from './db/schema.ts';
 import type { DB } from './db/index.ts';
 
@@ -37,8 +37,9 @@ export async function submit(
 		});
 }
 
-/** The top of a game's board, and where this player stands if they're on it. */
-export async function standings(db: DB, game: string, board: Board, profileId: string | null) {
+/** The top of a board (today's, if it's daily), and where this player stands if they're on it. */
+export async function standings(db: DB, board: Board, profileId: string | null) {
+	const game = scoreKey(board);
 	const high = board.order === 'high';
 	const rows = await db
 		.select({ name: profile.name, colour: profile.colour, value: best.value, id: best.profileId })
@@ -71,11 +72,17 @@ export async function standings(db: DB, game: string, board: Board, profileId: s
 	};
 }
 
-/** This player's best in every game, by game key. */
+/** This player's best on every board (today's, for a daily one), by board key. */
 export async function myBests(db: DB, profileId: string) {
 	const rows = await db
 		.select({ game: best.game, value: best.value })
 		.from(best)
 		.where(eq(best.profileId, profileId));
-	return Object.fromEntries(rows.map((r) => [r.game, r.value]));
+	const mine = new Map(rows.map((r) => [r.game, r.value]));
+	return Object.fromEntries(
+		BOARDS.flatMap((b) => {
+			const value = mine.get(scoreKey(b));
+			return value === undefined ? [] : [[b.key, value]];
+		})
+	);
 }

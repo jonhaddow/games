@@ -10,6 +10,8 @@ export type Board = {
 	/** Sanity limits for a posted score (whole numbers). */
 	max: number;
 	format: (value: number) => string;
+	/** A new board each day (see scoreKey). */
+	daily?: boolean;
 };
 
 export type Game = {
@@ -28,6 +30,14 @@ export function lapTime(ms: number) {
 	const s = ((cs % 6000) / 100).toFixed(2).padStart(5, '0');
 	return `${m}:${s}`;
 }
+
+/** Today's date where the family is, as YYYY-MM-DD. */
+const london = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' });
+export const today = (now = new Date()) => london.format(now);
+
+/** Where a board's scores are kept: its key, or for a daily board, its key and today's date. */
+export const scoreKey = (board: Board, now = new Date()) =>
+	board.daily ? `${board.key}:${today(now)}` : board.key;
 
 const friends = (n: number) => `${n} ${n === 1 ? 'friend' : 'friends'}`;
 
@@ -83,6 +93,37 @@ export const GAMES: Game[] = [
 		path: '/crops',
 		blurb: 'Grow a little farm, and a village round it',
 		boards: []
+	},
+	{
+		key: 'pipes',
+		name: 'Pipes',
+		path: '/pipes',
+		blurb: 'Turn the pipes, water the plant',
+		boards: [
+			{
+				key: 'pipes',
+				title: 'Most levels in a run',
+				order: 'high',
+				max: 10_000,
+				format: (n) => `${n} ${n === 1 ? 'level' : 'levels'}`
+			}
+		]
+	},
+	{
+		key: 'slide',
+		name: 'Slide Sort',
+		path: '/slide',
+		blurb: 'One colour puzzle a day',
+		boards: [
+			{
+				key: 'slide',
+				title: 'Fewest moves today',
+				order: 'low',
+				max: 9_999,
+				format: (n) => `${n} ${n === 1 ? 'move' : 'moves'}`,
+				daily: true
+			}
+		]
 	}
 ];
 
