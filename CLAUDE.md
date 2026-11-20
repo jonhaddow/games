@@ -1,6 +1,6 @@
 # Games
 
-The family games app at https://games.app.haddow.me: a home screen of games, one profile (name and colour, no sign-in) and leaderboards. Each game is a page here (`/stack`, `/race`, `/squid`, `/crops`, `/pipes`, `/slide`, `/robot`). The old apps' subdomains and repos (`~/code/stack`, `~/code/race`, `~/code/squid`, `~/code/crops`) are left as they were, to be closed or redirected.
+The family games app at https://games.app.haddow.me: a home screen of games, one profile (name and colour, no sign-in) and leaderboards. Each game is a page here (`/stack`, `/race`, `/squid`, `/crops`, `/pipes`, `/slide`, `/robot`, `/garden`). The old apps' subdomains and repos (`~/code/stack`, `~/code/race`, `~/code/squid`, `~/code/crops`) are left as they were, to be closed or redirected.
 
 ## Worth knowing
 
@@ -79,3 +79,12 @@ A top-down pixel-art farming game for younger kids on a tablet (touch, landscape
 - Level n is seeded from n, so it's the same for everyone; `levelFor` retries layouts until `solve` gives the par `levelShape` wants. Tuning: `levelShape` (size, gems, par) and `starsFor`.
 - Missing a gem never loses: the robot goes back to the start with the moves kept.
 - The save is `localStorage` `robot-v1` (stars per level); the board is total stars.
+
+## Garden Defence (`/garden`)
+
+- `src/lib/garden/garden.ts` is the rules (planting, waves, shots, munching, hearts): pure, seeded and unit tested. `draw.ts` draws everything on the canvas in code; `Garden.svelte` is the page and runs the loop.
+- Portrait: lanes run down the screen, zombies come through the hedge at the top and the house is at the bottom. Positions are in rows (`y`), a plant at row r fills r to r + 1.
+- Friendly: beaten zombies nod off (Zzz) rather than die. Plants unlock by wave (`PLANTS[k].from`).
+- Tuning: `PLANTS`, `ZOMBIES`, `waveShape`, `waveSpawns` and `toughness`. Simulated, no plants loses wave 1, two rows of tomatoes reach about wave 7, a fuller garden about 12.
+- The best is in `localStorage` (`garden-best`); the board is most waves survived.
+- In dev, `window.__garden` has the garden, `run(seconds)` to fast-forward and `screenOf(lane, row)` for taps (`e2e/garden.spec.ts`).
