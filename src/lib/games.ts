@@ -139,6 +139,21 @@ export const GAMES: Game[] = [
 				format: (n) => `${n} ${n === 1 ? 'star' : 'stars'}`
 			}
 		]
+	},
+	{
+		key: 'garden',
+		name: 'Garden Defence',
+		path: '/garden',
+		blurb: 'Plant veg, stop the zombies',
+		boards: [
+			{
+				key: 'garden',
+				title: 'Most waves survived',
+				order: 'high',
+				max: 10_000,
+				format: (n) => `${n} ${n === 1 ? 'wave' : 'waves'}`
+			}
+		]
 	}
 ];
 
