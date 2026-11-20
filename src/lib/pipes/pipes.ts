@@ -82,7 +82,7 @@ function path(cols: number, rows: number, rand: () => number) {
 }
 
 /** A new puzzle for a level, with every tile turned at random (and not already solved). */
-export function generate(level: number, rand: () => number = Math.random): Puzzle {
+export function generate(level: number, rand: () => number): Puzzle {
 	const { cols, rows } = levelSize(level);
 	const { start, route } = path(cols, rows, rand);
 	const open = new Array<number>(cols * rows).fill(0);

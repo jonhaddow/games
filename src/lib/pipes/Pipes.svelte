@@ -18,7 +18,8 @@
 
 	let phase = $state<'menu' | 'playing' | 'watered'>('menu');
 	let cleared = $state(0);
-	let level = $derived(cleared + 1);
+	/** The level being played. */
+	let level = $state(1);
 	let puzzle = $state<Puzzle | null>(null);
 	let saveFailed = $state(false);
 	let water = $derived(puzzle ? flow(puzzle) : null);
@@ -32,6 +33,7 @@
 	});
 
 	function play() {
+		level = cleared + 1;
 		saveFailed = false;
 		puzzle = levelFor(level);
 		phase = 'playing';
@@ -50,6 +52,7 @@
 		const longest = Math.max(...depth.values());
 		setTimeout(
 			() => {
+				// Unless they've gone to the menu meanwhile.
 				if (phase === 'watered') play();
 			},
 			longest * RUN + 900
@@ -82,16 +85,14 @@
 					{cleared}
 					{cleared === 1 ? 'level' : 'levels'} done
 				</p>{/if}
-			<button class="big" onclick={play}>Play level {level}</button>
+			<button class="big" onclick={play}>Play level {cleared + 1}</button>
 			{#if !signedIn}
 				<a class="big plain" href="/profile?back=/pipes">Pick a name for the board</a>
 			{/if}
 		</div>
 	{:else if puzzle && water}
 		<div class="hud">
-			<span
-				>Level <strong data-testid="level">{phase === 'watered' ? level - 1 : level}</strong></span
-			>
+			<span>Level <strong data-testid="level">{level}</strong></span>
 			{#if saveFailed}<span class="note">Couldn’t save that one.</span>{/if}
 			<button class="small" onclick={() => (phase = 'menu')}>Menu</button>
 		</div>
@@ -246,15 +247,13 @@
 	.hud {
 		display: flex;
 		justify-content: space-between;
+		align-items: center;
 		width: min(440px, 100%);
 		font-size: 20px;
 	}
 	.hud strong {
 		font-size: 30px;
 		font-weight: 400;
-	}
-	.hud {
-		align-items: center;
 	}
 	.small {
 		padding: 8px 12px;

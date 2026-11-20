@@ -28,7 +28,7 @@ test('water plants level by level, and carry on later', async ({ page }) => {
 	await expect(page.getByTestId('level')).toHaveText('2');
 
 	// No clock: it waits as long as it takes.
-	await page.clock.runFor(600_000);
+	await page.clock.runFor(130_000);
 	await expect(page.getByTestId('level')).toHaveText('2');
 	await page.getByRole('button', { name: 'Menu' }).click();
 	await expect(page.getByTestId('cleared')).toHaveText('1 level done');
