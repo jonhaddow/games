@@ -11,6 +11,8 @@
 		cantPlant,
 		dig,
 		newGarden,
+		noneOf,
+		plantAt,
 		plant,
 		step,
 		type Garden,
@@ -33,13 +35,7 @@
 	let selected = $state<PlantKind | 'dig' | null>(null);
 	/** What the top bar and cards show, copied from the garden when it changes. */
 	let hud = $state({ honey: 0, hearts: 0, wave: 1, cleared: 0 });
-	let cooling = $state<Record<PlantKind, number>>({
-		hive: 0,
-		tomato: 0,
-		pumpkin: 0,
-		onion: 0,
-		chilli: 0
-	});
+	let cooling = $state(noneOf(0));
 	let banner = $state<{ text: string; sub?: string } | null>(null);
 	let newBest = $state(false);
 	let saveFailed = $state(false);
@@ -65,14 +61,14 @@
 	}
 
 	function sync() {
-		if (hud.honey !== g.honey) hud.honey = g.honey;
-		if (hud.hearts !== g.hearts) hud.hearts = g.hearts;
-		if (hud.wave !== g.wave) hud.wave = g.wave;
-		if (hud.cleared !== g.cleared) hud.cleared = g.cleared;
+		// $state skips writes that don't change anything.
+		hud.honey = g.honey;
+		hud.hearts = g.hearts;
+		hud.wave = g.wave;
+		hud.cleared = g.cleared;
 		for (const k of PLANT_KINDS) {
-			const left = Math.max(0, g.ready[k] - g.time) / PLANTS[k].cooldown;
-			const shown = Math.ceil(left * 20) / 20;
-			if (cooling[k] !== shown) cooling[k] = shown;
+			// In steps of 5%, so the cards don't redraw every frame.
+			cooling[k] = Math.ceil((Math.max(0, g.ready[k] - g.time) / PLANTS[k].cooldown) * 20) / 20;
 		}
 	}
 
@@ -201,7 +197,7 @@
 			drawLawn(ctx, ox, oy, c, LANES, ROWS);
 			for (const p of g.plants) drawPlant(ctx, p.kind, ox + p.lane * c, oy + p.row * c, c, t);
 			// Further-down zombies drawn last, so they stand in front.
-			const zs = g.zombies.toSorted((a, b) => a.y - b.y);
+			const zs = [...g.zombies].sort((a, b) => a.y - b.y);
 			for (const z of zs) drawZombie(ctx, z, ox + (z.lane + 0.5) * c, oy + z.y * c, c, t + z.id);
 			for (const s of g.shots) drawTomato(ctx, ox + (s.lane + 0.5) * c, oy + s.y * c, c);
 			ctx.textAlign = 'center';
@@ -232,7 +228,7 @@
 				ctx.fillStyle = 'rgb(255 255 255 / 0.12)';
 				for (let l = 0; l < LANES; l++) {
 					for (let r = 0; r < ROWS; r++) {
-						if (!g.plants.some((p) => p.lane === l && p.row === r)) {
+						if (!plantAt(g, l, r)) {
 							ctx.fillRect(ox + l * c + 3, oy + r * c + 3, c - 6, c - 6);
 						}
 					}
@@ -376,14 +372,14 @@
 				<div class="panel">
 					<h2>Paused</h2>
 					<button class="big" onclick={() => (phase = 'play')}>Keep going</button>
-					<button class="big plain" onclick={() => (phase = 'menu')}>Stop</button>
+					<button class="big plain" onclick={gameOver}>Stop</button>
 				</div>
 			</div>
 		{:else if phase === 'over'}
 			<GamesButton />
 			<div class="cover">
 				<div class="panel" role="status">
-					<h2>The zombies got in!</h2>
+					<h2>{hud.hearts ? 'Game over' : 'The zombies got in!'}</h2>
 					<p class="score">
 						<strong data-testid="score">{hud.cleared}</strong>
 						{hud.cleared === 1 ? 'wave' : 'waves'} survived

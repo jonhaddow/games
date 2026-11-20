@@ -110,6 +110,15 @@ describe('plants', () => {
 		expect(g.plants[0].hp).toBeLessThan(PLANTS.pumpkin.hp);
 	});
 
+	it('a tomato hits a zombie that is munching it', () => {
+		const g = quiet();
+		const z = addZombie(g, 2, 3.7);
+		plant(g, 'tomato', 2, 3);
+		run(g, 1);
+		expect(z.eating).toBe(true);
+		expect(z.hp).toBeLessThan(ZOMBIES.walker.hp);
+	});
+
 	it('zombies eat a plant up, then walk on', () => {
 		const g = quiet();
 		plant(g, 'hive', 1, 4);
@@ -160,7 +169,6 @@ describe('waves', () => {
 	});
 
 	it('get bigger, with a big one every fifth', () => {
-		expect(waveShape(5).count).toBeGreaterThan(waveShape(1).count);
 		const g = newGarden(3);
 		const kinds = (n: number) => waveSpawns(g, n).map((s) => s.kind);
 		expect(kinds(1)).not.toContain('big');

@@ -44,6 +44,10 @@ export const PLANTS: Record<PlantKind, PlantInfo> = {
 };
 export const PLANT_KINDS = Object.keys(PLANTS) as PlantKind[];
 
+/** A value for every kind of plant. */
+export const noneOf = <T>(value: T) =>
+	Object.fromEntries(PLANT_KINDS.map((k) => [k, value])) as Record<PlantKind, T>;
+
 type ZombieInfo = { hp: number; speed: number; bite: number };
 /** Speed in rows a second, bite in damage a second. */
 export const ZOMBIES: Record<ZombieKind, ZombieInfo> = {
@@ -59,8 +63,8 @@ export const TOMATO_EVERY = 1.4;
 export const TOMATO_DAMAGE = 2;
 export const SHOT_SPEED = 6;
 /** How far behind (towards the house) an onion's smell reaches, and how much it slows. */
-export const ONION_REACH = 2;
-export const ONION_SLOW = 0.5;
+const ONION_REACH = 2;
+const ONION_SLOW = 0.5;
 export const CHILLI_FUSE = 0.6;
 export const CHILLI_DAMAGE = 60;
 /** How close a zombie gets to a plant before it stops to munch. */
@@ -148,7 +152,7 @@ export function newGarden(seed = Date.now()): Garden {
 		plants: [],
 		zombies: [],
 		shots: [],
-		ready: { hive: 0, tomato: 0, pumpkin: 0, onion: 0, chilli: 0 },
+		ready: noneOf(0),
 		events: [],
 		over: false,
 		seed: seed | 0,
@@ -164,7 +168,7 @@ export function waveShape(n: number) {
 }
 
 /** Zombies get a bit tougher each wave, so a game ends in the end. */
-export const toughness = (n: number) => 1 + 0.1 * (n - 1);
+const toughness = (n: number) => 1 + 0.1 * (n - 1);
 
 /** The zombies of wave n: tougher kinds join as the waves go on, and a big one every fifth. */
 export function waveSpawns(g: Garden, n: number): Spawn[] {
@@ -187,7 +191,7 @@ export function waveSpawns(g: Garden, n: number): Spawn[] {
 	return spawns.sort((a, b) => a.at - b.at);
 }
 
-export const unlocked = (g: Garden, kind: PlantKind) => g.wave >= PLANTS[kind].from;
+const unlocked = (g: Garden, kind: PlantKind) => g.wave >= PLANTS[kind].from;
 
 export const plantAt = (g: Garden, lane: number, row: number) =>
 	g.plants.find((p) => p.lane === lane && p.row === row);
@@ -296,7 +300,8 @@ function stepPlants(g: Garden, dt: number) {
 			const target = onLawn(g, p.lane).some((z) => z.y < p.row + 1);
 			if (p.timer <= 0 && target) {
 				p.timer = TOMATO_EVERY;
-				g.shots.push({ id: g.nextId++, lane: p.lane, y: p.row + 0.3 });
+				// From the plant's front edge, so it hits a zombie munching it too.
+				g.shots.push({ id: g.nextId++, lane: p.lane, y: p.row + 0.8 });
 			}
 			p.timer = Math.max(p.timer, 0);
 		} else if (p.kind === 'chilli' && p.timer <= 0) {
