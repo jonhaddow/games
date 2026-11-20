@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { E, N, S, W, flow, generate, levelSize, rotate, turn, type Puzzle } from './pipes.ts';
+import {
+	E,
+	N,
+	S,
+	W,
+	flow,
+	generate,
+	levelFor,
+	levelSize,
+	rotate,
+	turn,
+	type Puzzle
+} from './pipes.ts';
 import { seeded } from '../random.ts';
 
 /** Whether some way of turning the tiles gets water from the tap to the plant. */
@@ -87,5 +99,10 @@ describe('generate', () => {
 
 	it('repeats with the same seed', () => {
 		expect(generate(5, seeded(7))).toEqual(generate(5, seeded(7)));
+	});
+
+	it('gives everyone the same level n', () => {
+		expect(levelFor(3)).toEqual(levelFor(3));
+		expect(levelFor(3)).not.toEqual(levelFor(4));
 	});
 });

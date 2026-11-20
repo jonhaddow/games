@@ -1,72 +1,39 @@
 <script lang="ts">
 	import GamesButton from '#lib/components/GamesButton.svelte';
 	import { postScore } from '#lib/scores.ts';
-	import {
-		E,
-		N,
-		S,
-		W,
-		START_TIME,
-		flow,
-		generate,
-		levelBonus,
-		turn,
-		type Puzzle
-	} from './pipes.ts';
+	import { E, N, S, W, flow, levelFor, turn, type Puzzle } from './pipes.ts';
 
 	type Props = {
-		/** The player's best so far, or null before they've picked a name (then it's kept on this device). */
+		/** The player's levels on the board, or null before they've picked a name (then it's kept on this device). */
 		best: number | null;
 		/** Whether this device has picked a name, so scores go on the board. */
 		signedIn: boolean;
 	};
 	let { best: serverBest, signedIn }: Props = $props();
 
-	const LOCAL_BEST = 'pipes-best';
+	/** Levels cleared on this device. (It was the best run when Pipes had a clock, which carries on.) */
+	const SAVE = 'pipes-best';
 	/** How long the water takes to run along each tile once it's solved, in ms. */
 	const RUN = 90;
 
-	let phase = $state<'ready' | 'playing' | 'watered' | 'over'>('ready');
-	let level = $state(1);
+	let phase = $state<'menu' | 'playing' | 'watered'>('menu');
+	let cleared = $state(0);
+	let level = $derived(cleared + 1);
 	let puzzle = $state<Puzzle | null>(null);
-	let left = $state(START_TIME);
-	let bonus = $state(0);
-	let best = $derived(serverBest ?? 0);
-	let newBest = $state(false);
-	let saving = $state(false);
 	let saveFailed = $state(false);
-	let cleared = $derived(level - 1);
 	let water = $derived(puzzle ? flow(puzzle) : null);
 
-	// The best on this device counts too (see Stack).
+	// Carry on from the furthest level, on this device or the board.
 	$effect(() => {
-		const local = Number(localStorage.getItem(LOCAL_BEST) ?? 0);
-		if (!signedIn) best = local;
-		else if (local > (serverBest ?? 0))
-			void postScore('pipes', local).then((me) => {
-				if (me) best = me.value;
-			});
+		const local = Number(localStorage.getItem(SAVE) ?? 0) || 0;
+		cleared = Math.max(local, serverBest ?? 0);
+		// The device's levels count once a name is picked (see Stack).
+		if (signedIn && local > (serverBest ?? 0)) void postScore('pipes', local);
 	});
 
-	// The clock runs while playing, and stops while the water runs to the plant.
-	$effect(() => {
-		if (phase !== 'playing') return;
-		let last = performance.now();
-		const tick = setInterval(() => {
-			const now = performance.now();
-			left = Math.max(0, left - (now - last) / 1000);
-			last = now;
-			if (left === 0) void gameOver();
-		}, 100);
-		return () => clearInterval(tick);
-	});
-
-	function start() {
-		level = 1;
-		left = START_TIME;
-		newBest = false;
+	function play() {
 		saveFailed = false;
-		puzzle = generate(level);
+		puzzle = levelFor(level);
 		phase = 'playing';
 	}
 
@@ -76,34 +43,17 @@
 		const { solved, depth } = flow(puzzle);
 		if (!solved) return;
 		phase = 'watered';
-		bonus = levelBonus(level);
 		navigator.vibrate?.(15);
+		cleared++;
+		localStorage.setItem(SAVE, String(cleared));
+		if (signedIn) void postScore('pipes', cleared).then((me) => (saveFailed = !me));
 		const longest = Math.max(...depth.values());
 		setTimeout(
 			() => {
-				left += bonus;
-				level++;
-				puzzle = generate(level);
-				phase = 'playing';
+				if (phase === 'watered') play();
 			},
 			longest * RUN + 900
 		);
-	}
-
-	async function gameOver() {
-		phase = 'over';
-		if (cleared > best) {
-			best = cleared;
-			newBest = true;
-		}
-		if (cleared > Number(localStorage.getItem(LOCAL_BEST) ?? 0))
-			localStorage.setItem(LOCAL_BEST, String(cleared));
-		if (!signedIn || cleared === 0) return;
-		saving = true;
-		const me = await postScore('pipes', cleared);
-		saving = false;
-		if (me) best = me.value;
-		else saveFailed = true;
 	}
 
 	/** The arms of a pipe, from the middle of the tile to each opening's edge. */
@@ -119,47 +69,31 @@
 		for (let k = 0; k < (4 - (turns % 4)) % 4; k++) open = ((open << 1) | (open >> 3)) & 15;
 		return open;
 	}
-	const seconds = (s: number) => Math.ceil(s);
 </script>
 
 <div class="pipes" data-phase={phase}>
-	{#if phase === 'ready'}
+	{#if phase === 'menu'}
 		<GamesButton />
 		<nav class="corner"><a href="/boards/pipes">Scores</a></nav>
 		<div class="menu">
 			<h1>Pipes</h1>
-			<p>
-				Tap the pipes to turn them. Get the water from the tap to the plant before the time runs
-				out.
-			</p>
-			{#if best}<p class="best">Best {best}</p>{/if}
-			<button class="big" onclick={start}>Start</button>
-		</div>
-	{:else if phase === 'over'}
-		<GamesButton />
-		<div class="menu">
-			<p class="label">Time’s up!</p>
-			<h2>{cleared}</h2>
-			<p class="label">{cleared === 1 ? 'level' : 'levels'}</p>
-			<p class="best">
-				{#if newBest}New best!{:else}Best {best}{/if}
-			</p>
-			{#if saving}<p class="note">Saving…</p>{/if}
-			{#if saveFailed}<p class="note">Couldn’t save that one.</p>{/if}
-			<button class="big" onclick={start}>Play again</button>
-			{#if signedIn}
-				<a class="big plain" href="/boards/pipes">Scores</a>
-			{:else}
+			<p>Tap the pipes to turn them. Get the water from the tap to the plant.</p>
+			{#if cleared}<p class="best" data-testid="cleared">
+					{cleared}
+					{cleared === 1 ? 'level' : 'levels'} done
+				</p>{/if}
+			<button class="big" onclick={play}>Play level {level}</button>
+			{#if !signedIn}
 				<a class="big plain" href="/profile?back=/pipes">Pick a name for the board</a>
 			{/if}
 		</div>
 	{:else if puzzle && water}
 		<div class="hud">
-			<span>Level <strong data-testid="level">{level}</strong></span>
-			<span class="clock" class:low={left < 10}>
-				{#if phase === 'watered'}<span class="bonus">+{bonus}</span>{/if}
-				<strong>{seconds(left)}</strong>s
-			</span>
+			<span
+				>Level <strong data-testid="level">{phase === 'watered' ? level - 1 : level}</strong></span
+			>
+			{#if saveFailed}<span class="note">Couldn’t save that one.</span>{/if}
+			<button class="small" onclick={() => (phase = 'menu')}>Menu</button>
 		</div>
 		<div class="board" style:--cols={puzzle.cols} style:--rows={puzzle.rows} style:--run="{RUN}ms">
 			<span class="tap" style:grid-row={puzzle.startRow + 1} aria-hidden="true">
@@ -269,17 +203,10 @@
 		gap: 14px;
 		text-align: center;
 	}
-	h1,
-	h2 {
+	h1 {
 		margin: 0;
 		line-height: 1;
-	}
-	h1 {
 		font-size: 64px;
-		color: var(--soil);
-	}
-	h2 {
-		font-size: 110px;
 		color: var(--soil);
 	}
 	.menu p {
@@ -287,7 +214,6 @@
 		font-family: system-ui, sans-serif;
 		font-weight: 700;
 	}
-	.menu .label,
 	.menu .best {
 		font-family: var(--display);
 		font-weight: 400;
@@ -327,22 +253,17 @@
 		font-size: 30px;
 		font-weight: 400;
 	}
-	.clock.low strong {
-		color: #c81e1e;
+	.hud {
+		align-items: center;
 	}
-	.bonus {
-		color: #fff;
-		animation: rise 0.9s ease-out forwards;
-	}
-	@keyframes rise {
-		from {
-			opacity: 0;
-			transform: translateY(10px);
-		}
-		to {
-			opacity: 1;
-			transform: none;
-		}
+	.small {
+		padding: 8px 12px;
+		border: 0;
+		border-radius: 10px;
+		background: #fff;
+		color: var(--ink);
+		font: 15px var(--display);
+		cursor: pointer;
 	}
 	/* The tap and plant sit in the columns either side of the grid. */
 	.board {

@@ -102,7 +102,7 @@ export const GAMES: Game[] = [
 		boards: [
 			{
 				key: 'pipes',
-				title: 'Most levels in a run',
+				title: 'Most levels',
 				order: 'high',
 				max: 10_000,
 				format: (n) => `${n} ${n === 1 ? 'level' : 'levels'}`

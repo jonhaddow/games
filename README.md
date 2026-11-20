@@ -10,7 +10,7 @@ The games:
 - **Race:** three laps of a 3D motorbike track with hills and jumps, steered by tilting the phone.
 - **Squid Spells:** for younger kids. Draw the shape each sea creature shows to cast a spell and make it a friend, and win outfits for your squid. Plays offline once added to the home screen.
 - **Crops:** for younger kids on a tablet. A gentle pixel-art farm: tap to walk round the village, grow crops, look after animals, fish, help villagers and spend coins on the farm and village. Nothing ever dies, and the farm keeps growing while the game is closed. No leaderboard. Plays offline once added to the home screen.
-- **Pipes:** tap the pipes to turn them and get the water from the tap to the plant. Each level is bigger, and the clock is always running.
+- **Pipes:** tap the pipes to turn them and get the water from the tap to the plant. Each level is bigger, and the board counts the levels done.
 - **Slide Sort:** one puzzle a day, the same for everyone: slide rows and columns of coloured tiles until each row is one colour, in as few moves as you can.
 - **Robot Path:** plan the robot's moves with arrows, then press Go. It rolls until it bumps into something; collect every gem in as few moves as you can for three stars.
 

@@ -14,12 +14,12 @@ async function solve(page: Page) {
 	}
 }
 
-test('water a plant, then run out of time', async ({ page }) => {
+test('water plants level by level, and carry on later', async ({ page }) => {
 	await page.clock.install();
 	await open(page, '/profile?back=/pipes');
 	await page.getByRole('button', { name: 'That’s me: Kim' }).click();
 	await expect(page).toHaveURL('/pipes');
-	await page.getByRole('button', { name: 'Start' }).click();
+	await page.getByRole('button', { name: 'Play level 1' }).click();
 	await expect(page.getByTestId('level')).toHaveText('1');
 
 	await solve(page);
@@ -27,10 +27,14 @@ test('water a plant, then run out of time', async ({ page }) => {
 	await page.clock.runFor(3000);
 	await expect(page.getByTestId('level')).toHaveText('2');
 
-	await page.clock.runFor(120_000);
-	await expect(page.getByText('Time’s up!')).toBeVisible();
-	await expect(page.getByRole('heading', { name: '1' })).toBeVisible();
-	await expect(page.getByText('New best!')).toBeVisible();
+	// No clock: it waits as long as it takes.
+	await page.clock.runFor(600_000);
+	await expect(page.getByTestId('level')).toHaveText('2');
+	await page.getByRole('button', { name: 'Menu' }).click();
+	await expect(page.getByTestId('cleared')).toHaveText('1 level done');
+
+	await page.reload();
+	await expect(page.getByRole('button', { name: 'Play level 2' })).toBeVisible();
 	await page.getByRole('link', { name: 'Scores' }).click();
 	await expect(page).toHaveURL('/boards/pipes');
 	await expect(page.locator('.rows li.me')).toContainText(/Kim.*1 level/);
