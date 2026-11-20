@@ -64,7 +64,8 @@ A top-down pixel-art farming game for younger kids on a tablet (touch, landscape
 
 - `src/lib/pipes/pipes.ts` is the rules (tiles as N/E/S/W bitmasks, the generator, where the water flows): pure and unit tested. `Pipes.svelte` draws it with SVG tiles, no canvas.
 - The generator walks a winding route from the tap to the plant, fills the rest with decoys, then turns every tile at random. Each tile keeps `home` (how it was made), which the e2e test uses to solve it.
-- Tuning: grid size in `levelSize`, the clock in `START_TIME` and `levelBonus`. The best is in `localStorage` (`pipes-best`).
+- Level n is seeded from n (`levelFor`), so it's the same for everyone. No clock: levels carry on where you left off, and the board is levels done.
+- Tuning: grid size in `levelSize`. Levels done are in `localStorage` (`pipes-best`, the old best run, which carries on), or the board if that's further.
 
 ## Slide Sort (`/slide`)
 

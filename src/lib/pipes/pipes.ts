@@ -2,6 +2,8 @@
 // Water comes in from the tap on the left of the start tile and has to reach the
 // plant on the right of the end tile. Pure, so it's unit tested.
 
+import { seeded } from '../random.ts';
+
 /** Openings as bits: north, east, south, west (clockwise, so rotating is a shift). */
 export const N = 1;
 export const E = 2;
@@ -44,10 +46,6 @@ export function levelSize(level: number) {
 	};
 }
 
-/** Seconds on the clock at the start of a run, and added for each level cleared. */
-export const START_TIME = 40;
-export const levelBonus = (level: number) => 10 + Math.min(level, 10) * 2;
-
 const pick = <T>(xs: T[], rand: () => number) => xs[Math.floor(rand() * xs.length)];
 
 /** A winding path from the left column to the right one that never crosses itself. */
@@ -84,7 +82,7 @@ function path(cols: number, rows: number, rand: () => number) {
 }
 
 /** A new puzzle for a level, with every tile turned at random (and not already solved). */
-export function generate(level: number, rand: () => number = Math.random): Puzzle {
+export function generate(level: number, rand: () => number): Puzzle {
 	const { cols, rows } = levelSize(level);
 	const { start, route } = path(cols, rows, rand);
 	const open = new Array<number>(cols * rows).fill(0);
@@ -118,6 +116,9 @@ export function generate(level: number, rand: () => number = Math.random): Puzzl
 	} while (flow(puzzle).solved);
 	return puzzle;
 }
+
+/** Level n (1 up): the same for everyone, as it's seeded from n. */
+export const levelFor = (n: number) => generate(n, seeded(n * 7919 + 31));
 
 /** Turns a tile a quarter clockwise (in place). */
 export function turn(puzzle: Puzzle, i: number) {
