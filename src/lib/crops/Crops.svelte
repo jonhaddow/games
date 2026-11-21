@@ -465,8 +465,9 @@
 
 	{#if fishing}
 		<div class="fishing panel" class:bite={fishing === 'bite'}>
-			<span data-testid="fishing">{fishing === 'bite' ? 'Tap now!' : 'Wait for the splash...'}</span
-			>
+			<span data-testid="fishing">
+				{fishing === 'bite' ? 'Tap now!' : 'Wait for the splash...'}
+			</span>
 			<button class="stop" onclick={stopFishing}>Stop</button>
 		</div>
 	{/if}
