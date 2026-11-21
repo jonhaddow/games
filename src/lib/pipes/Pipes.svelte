@@ -98,14 +98,14 @@
 		</div>
 		<div class="board" style:--cols={puzzle.cols} style:--rows={puzzle.rows} style:--run="{RUN}ms">
 			<span class="tap" style:grid-row={puzzle.startRow + 1} aria-hidden="true">
-				<svg viewBox="0 0 40 40"
-					><path d="M4 10h18v-6h8v6h4v12h-14v-4h-16z" /><circle
+				<svg viewBox="0 0 40 40">
+					<path d="M4 10h18v-6h8v6h4v12h-14v-4h-16z" /><circle
 						class:dripping={water.depth.size > 0}
 						cx="27"
 						cy="30"
 						r="4"
-					/></svg
-				>
+					/>
+				</svg>
 			</span>
 			{#each puzzle.tiles as tile, i (i)}
 				{@const d = water.depth.get(i)}

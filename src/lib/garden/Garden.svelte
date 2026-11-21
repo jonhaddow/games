@@ -323,8 +323,10 @@
 				class="small"
 				onclick={() => (phase = 'paused')}
 				disabled={phase !== 'play'}
-				aria-label="Pause">❚❚</button
+				aria-label="Pause"
 			>
+				❚❚
+			</button>
 		</div>
 
 		<div class="field">
@@ -363,8 +365,10 @@
 				class:on={selected === 'dig'}
 				aria-pressed={selected === 'dig'}
 				aria-label="Dig up"
-				onclick={() => (selected = 'dig')}>⛏</button
+				onclick={() => (selected = 'dig')}
 			>
+				⛏
+			</button>
 		</div>
 
 		{#if phase === 'paused'}

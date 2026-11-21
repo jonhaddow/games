@@ -155,9 +155,9 @@
 		<div class="hud">
 			<span>Level <strong data-testid="level">{n}</strong></span>
 			<span>Par <strong>{level.par}</strong></span>
-			<button class="small" onclick={() => (phase = 'menu')} disabled={phase === 'running'}
-				>Levels</button
-			>
+			<button class="small" onclick={() => (phase = 'menu')} disabled={phase === 'running'}>
+				Levels
+			</button>
 		</div>
 
 		<div class="board" style:--cols={level.cols} style:--rows={level.rows} class:missed>
@@ -213,18 +213,22 @@
 						class="key {dir}"
 						onclick={() => add(dir)}
 						disabled={phase !== 'plan'}
-						aria-label={dir}>{ARROW[dir]}</button
+						aria-label={dir}
 					>
+						{ARROW[dir]}
+					</button>
 				{/each}
 				<button
 					class="key undo"
 					onclick={() => program.pop()}
 					disabled={phase !== 'plan' || !program.length}
-					aria-label="Undo">⌫</button
+					aria-label="Undo"
 				>
-				<button class="key go" onclick={go} disabled={phase !== 'plan' || !program.length}
-					>Go</button
-				>
+					⌫
+				</button>
+				<button class="key go" onclick={go} disabled={phase !== 'plan' || !program.length}>
+					Go
+				</button>
 			</div>
 		{/if}
 	{/if}
