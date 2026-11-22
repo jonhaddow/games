@@ -12,7 +12,7 @@ declare global {
 		__garden?: {
 			garden: GardenState;
 			run(seconds: number): void;
-			screenOf(lane: number, row: number): { x: number; y: number };
+			screenOf(col: number, row: number): { x: number; y: number };
 		};
 	}
 	namespace App {

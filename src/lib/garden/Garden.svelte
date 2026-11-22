@@ -2,19 +2,27 @@
 	import { dev } from '$app/env';
 	import GamesButton from '#lib/components/GamesButton.svelte';
 	import { postScore } from '#lib/scores.ts';
-	import { drawLawn, drawPlant, drawTomato, drawZombie } from './draw.ts';
+	import { drawLawn, drawPlant, drawShot, drawZombie } from './draw.ts';
 	import {
-		LANES,
+		COLS,
+		HEARTS,
+		HOUSE,
+		PATH,
 		PLANTS,
 		PLANT_KINDS,
 		ROWS,
 		cantPlant,
-		dig,
 		newGarden,
-		noneOf,
 		plantAt,
 		plant,
+		pointAt,
+		rangeOf,
+		sell,
+		sellValue,
+		startWave,
 		step,
+		upgrade,
+		upgradeCost,
 		type Garden,
 		type PlantKind,
 		type ZombieKind
@@ -32,10 +40,18 @@
 
 	let phase = $state<'menu' | 'play' | 'paused' | 'over'>('menu');
 	let best = $state(0);
-	let selected = $state<PlantKind | 'dig' | null>(null);
+	/** The card picked to plant. */
+	let selected = $state<PlantKind | null>(null);
+	/** A plant tapped on, to upgrade or sell. */
+	let picked = $state<{
+		id: number;
+		kind: PlantKind;
+		level: number;
+		up: number | null;
+		sell: number;
+	} | null>(null);
 	/** What the top bar and cards show, copied from the garden when it changes. */
-	let hud = $state({ honey: 0, hearts: 0, wave: 1, cleared: 0 });
-	let cooling = $state(noneOf(0));
+	let hud = $state({ coins: 0, hearts: 0, wave: 1, cleared: 0, building: true });
 	let banner = $state<{ text: string; sub?: string } | null>(null);
 	let newBest = $state(false);
 	let saveFailed = $state(false);
@@ -52,24 +68,30 @@
 
 	function start() {
 		g = newGarden();
-		selected = 'tomato';
+		selected = 'pea';
+		picked = null;
 		newBest = false;
 		saveFailed = false;
-		show('Get ready!', 'Plant some tomatoes');
+		show('Get ready!', 'Plant beside the path, then start');
 		sync();
 		phase = 'play';
 	}
 
 	function sync() {
 		// $state skips writes that don't change anything.
-		hud.honey = g.honey;
+		hud.coins = g.coins;
 		hud.hearts = g.hearts;
 		hud.wave = g.wave;
 		hud.cleared = g.cleared;
-		for (const k of PLANT_KINDS) {
-			// In steps of 5%, so the cards don't redraw every frame.
-			cooling[k] = Math.ceil((Math.max(0, g.ready[k] - g.time) / PLANTS[k].cooldown) * 20) / 20;
-		}
+		hud.building = g.building;
+	}
+
+	/** Shows a plant's upgrade and sell buttons (or hides them, given nothing). */
+	function pick(id?: number) {
+		const p = g.plants.find((p) => p.id === id);
+		picked = p
+			? { id: p.id, kind: p.kind, level: p.level, up: upgradeCost(p), sell: sellValue(p) }
+			: null;
 	}
 
 	async function gameOver() {
@@ -83,47 +105,56 @@
 		if (signedIn && g.cleared > 0) saveFailed = !(await postScore('garden', g.cleared));
 	}
 
+	function go() {
+		if (!startWave(g)) return;
+		picked = null;
+		sync();
+	}
+
+	function shake() {
+		short = false;
+		requestAnimationFrame(() => (short = true));
+	}
+
 	/** Puffs and floating words: drawn only, not part of the rules. */
 	type Effect = {
-		kind: 'text' | 'sleep' | 'bang';
+		kind: 'text' | 'sleep' | 'splash';
 		x: number;
 		y: number;
 		age: number;
 		text?: string;
 		zombie?: ZombieKind;
+		r?: number;
+		colour?: string;
 	};
+	const SPLASH: Partial<Record<PlantKind, string>> = { melon: '#ff6b6b', sprinkler: '#4cb3f0' };
 	let effects: Effect[] = [];
 	let bannerTimer: ReturnType<typeof setTimeout> | undefined;
 	function show(text: string, sub?: string) {
 		banner = { text, sub };
 		clearTimeout(bannerTimer);
-		bannerTimer = setTimeout(() => (banner = null), 1800);
+		bannerTimer = setTimeout(() => (banner = null), 2200);
 	}
 	$effect(() => () => clearTimeout(bannerTimer));
 
 	/** Where the lawn sits on the canvas, in CSS pixels. */
 	let view = { c: 40, ox: 0, oy: 0 };
 
-	function cellAt(px: number, py: number) {
-		const lane = Math.floor((px - view.ox) / view.c);
-		const row = Math.floor((py - view.oy) / view.c);
-		return { lane, row };
-	}
-
 	function tap(px: number, py: number) {
-		if (phase !== 'play' || !selected) return;
-		const { lane, row } = cellAt(px, py);
-		if (selected === 'dig') {
-			dig(g, lane, row);
+		if (phase !== 'play' || !g.building) return;
+		const col = Math.floor((px - view.ox) / view.c);
+		const row = Math.floor((py - view.oy) / view.c);
+		const there = plantAt(g, col, row);
+		if (there) {
+			pick(there.id);
 			return;
 		}
-		const why = cantPlant(g, selected, lane, row);
-		if (why === 'honey') {
-			short = false;
-			requestAnimationFrame(() => (short = true));
-		}
+		picked = null;
+		if (!selected) return;
+		const why = cantPlant(g, selected, col, row);
+		if (why === 'coins') shake();
 		if (!why) {
-			plant(g, selected, lane, row);
+			plant(g, selected, col, row);
 			navigator.vibrate?.(10);
 			sync();
 		}
@@ -143,10 +174,10 @@
 			canvas.height = Math.round(h * dpr);
 			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 			// Room for the hedge above (0.5 cells) and the house below (0.8).
-			const c = Math.floor(Math.min(w / LANES, h / (ROWS + 1.3)));
+			const c = Math.floor(Math.min(w / COLS, h / (ROWS + 1.3)));
 			view = {
 				c,
-				ox: Math.round((w - c * LANES) / 2),
+				ox: Math.round((w - c * COLS) / 2),
 				oy: Math.round((h - c * (ROWS + 1.3)) / 2 + c * 0.5)
 			};
 		};
@@ -158,30 +189,39 @@
 			step(g, dt);
 			const { c, ox, oy } = view;
 			for (const e of g.events) {
-				const x = ox + (e.type === 'wave' || e.type === 'cleared' ? 0 : (e.lane + 0.5) * c);
-				if (e.type === 'honey') {
+				if (e.type === 'sleep') {
+					effects.push({ kind: 'sleep', x: ox + e.x * c, y: oy + e.y * c, age: 0, zombie: e.kind });
+				} else if (e.type === 'splash') {
 					effects.push({
-						kind: 'text',
-						text: `+${e.amount} 🍯`,
-						x,
-						y: oy + (e.row + 0.2) * c,
+						kind: 'splash',
+						x: ox + e.x * c,
+						y: oy + e.y * c,
+						r: e.r * c,
+						colour: SPLASH[e.kind] ?? '#fff',
 						age: 0
 					});
-				} else if (e.type === 'sleep') {
-					effects.push({ kind: 'sleep', x, y: oy + e.y * c, age: 0, zombie: e.kind });
-				} else if (e.type === 'bang') {
-					effects.push({ kind: 'bang', x, y: oy + (e.row + 0.5) * c, age: 0 });
-					navigator.vibrate?.(40);
+				} else if (e.type === 'eaten') {
+					effects.push({
+						kind: 'text',
+						text: 'Munched!',
+						x: ox + (e.col + 0.5) * c,
+						y: oy + e.row * c,
+						age: 0
+					});
 				} else if (e.type === 'heart') {
-					effects.push({ kind: 'text', text: '💔', x, y: oy + ROWS * c, age: 0 });
+					effects.push({
+						kind: 'text',
+						text: '💔',
+						x: ox + (HOUSE + 0.5) * c,
+						y: oy + ROWS * c,
+						age: 0
+					});
 					navigator.vibrate?.(80);
-				} else if (e.type === 'wave') {
-					show(`Wave ${e.wave}`, e.wave % 5 === 0 ? 'A big one is coming!' : undefined);
 				} else if (e.type === 'cleared') {
 					const fresh = PLANT_KINDS.find((k) => PLANTS[k].from === e.wave + 1);
 					show(
-						`Wave ${e.wave} done!`,
-						fresh && `New: ${PLANTS[fresh].name}! ${PLANTS[fresh].about}`
+						`Wave ${e.wave} done! +${e.coins} 🪙`,
+						fresh ? `New: ${PLANTS[fresh].name}! ${PLANTS[fresh].about}` : undefined
 					);
 				}
 			}
@@ -194,46 +234,75 @@
 			const { c, ox, oy } = view;
 			const t = performance.now() / 1000;
 			ctx.clearRect(0, 0, w, h);
-			drawLawn(ctx, ox, oy, c, LANES, ROWS);
-			for (const p of g.plants) drawPlant(ctx, p.kind, ox + p.lane * c, oy + p.row * c, c, t);
+			drawLawn(ctx, ox, oy, c, COLS, ROWS, PATH);
+			if (selected && g.building && phase === 'play') {
+				// A hint of where it can go: the free cells it fits.
+				ctx.fillStyle = 'rgb(255 255 255 / 0.18)';
+				for (let col = 0; col < COLS; col++) {
+					for (let row = 0; row < ROWS; row++) {
+						const why = cantPlant(g, selected, col, row);
+						if (!why || why === 'coins')
+							ctx.fillRect(ox + col * c + 4, oy + row * c + 4, c - 8, c - 8);
+					}
+				}
+			}
+			for (const p of g.plants) {
+				drawPlant(ctx, p.kind, ox + p.col * c, oy + p.row * c, c, t, p.level);
+			}
+			const chosen = picked && g.plants.find((p) => p.id === picked!.id);
+			if (chosen && PLANTS[chosen.kind].range) {
+				ctx.fillStyle = 'rgb(255 255 255 / 0.2)';
+				ctx.strokeStyle = 'rgb(255 255 255 / 0.9)';
+				ctx.lineWidth = 2;
+				ctx.beginPath();
+				ctx.arc(
+					ox + (chosen.col + 0.5) * c,
+					oy + (chosen.row + 0.5) * c,
+					rangeOf(chosen) * c,
+					0,
+					Math.PI * 2
+				);
+				ctx.fill();
+				ctx.stroke();
+			}
 			// Further-down zombies drawn last, so they stand in front.
-			const zs = [...g.zombies].sort((a, b) => a.y - b.y);
-			for (const z of zs) drawZombie(ctx, z, ox + (z.lane + 0.5) * c, oy + z.y * c, c, t + z.id);
-			for (const s of g.shots) drawTomato(ctx, ox + (s.lane + 0.5) * c, oy + s.y * c, c);
+			const zs = g.zombies.map((z) => ({ z, at: pointAt(z.d) })).sort((a, b) => a.at.y - b.at.y);
+			for (const { z, at } of zs) {
+				const x = ox + at.x * c;
+				const y = oy + at.y * c;
+				drawZombie(ctx, z, x, y, c * 0.85, t + z.id);
+				if (z.hp < z.maxHp) {
+					ctx.fillStyle = 'rgb(0 0 0 / 0.4)';
+					ctx.fillRect(x - c * 0.3, y - c * 0.55, c * 0.6, c * 0.08);
+					ctx.fillStyle = z.slow < 1 ? '#4cb3f0' : '#7be04a';
+					ctx.fillRect(x - c * 0.3, y - c * 0.55, c * 0.6 * Math.max(0, z.hp / z.maxHp), c * 0.08);
+				}
+			}
+			for (const s of g.shots) drawShot(ctx, s.kind, ox + s.x * c, oy + s.y * c, c);
 			ctx.textAlign = 'center';
 			for (const e of effects) {
 				ctx.globalAlpha = Math.max(0, 1 - e.age / 1.4);
 				if (e.kind === 'text') {
-					ctx.font = `${Math.round(c * 0.32)}px Bungee, system-ui`;
+					ctx.font = `${Math.round(c * 0.3)}px Bungee, system-ui`;
 					ctx.fillStyle = '#fff';
 					ctx.strokeStyle = '#203018';
 					ctx.lineWidth = 4;
 					ctx.strokeText(e.text!, e.x, e.y - e.age * c * 0.6);
 					ctx.fillText(e.text!, e.x, e.y - e.age * c * 0.6);
 				} else if (e.kind === 'sleep') {
-					drawZombie(ctx, { kind: e.zombie!, eating: false, hit: 9 }, e.x, e.y, c, t, true);
+					drawZombie(ctx, { kind: e.zombie!, eating: false, hit: 9 }, e.x, e.y, c * 0.85, t, true);
 					ctx.font = `${Math.round(c * 0.3)}px Bungee, system-ui`;
 					ctx.fillStyle = '#fff';
 					ctx.fillText('Zzz', e.x + c * 0.3, e.y - c * 0.3 - e.age * c * 0.4);
 				} else {
-					ctx.fillStyle = '#ff9f1c';
+					ctx.globalAlpha = Math.max(0, 0.6 - e.age);
+					ctx.fillStyle = e.colour!;
 					ctx.beginPath();
-					ctx.arc(e.x, e.y, c * (0.6 + e.age * 2), 0, Math.PI * 2);
+					ctx.arc(e.x, e.y, e.r! * Math.min(1, 0.4 + e.age * 3), 0, Math.PI * 2);
 					ctx.fill();
 				}
 			}
 			ctx.globalAlpha = 1;
-			if (selected && selected !== 'dig' && phase === 'play') {
-				// A hint of where it can go: the empty cells.
-				ctx.fillStyle = 'rgb(255 255 255 / 0.12)';
-				for (let l = 0; l < LANES; l++) {
-					for (let r = 0; r < ROWS; r++) {
-						if (!plantAt(g, l, r)) {
-							ctx.fillRect(ox + l * c + 3, oy + r * c + 3, c - 6, c - 6);
-						}
-					}
-				}
-			}
 		};
 
 		let last = performance.now();
@@ -265,10 +334,10 @@
 					for (let t = 0; t < seconds && phase === 'play'; t += 1 / 30) update(1 / 30);
 				},
 				/** Where a cell's middle is on the page. */
-				screenOf(lane: number, row: number) {
+				screenOf(col: number, row: number) {
 					const r = canvas.getBoundingClientRect();
 					return {
-						x: r.left + view.ox + (lane + 0.5) * view.c,
+						x: r.left + view.ox + (col + 0.5) * view.c,
 						y: r.top + view.oy + (row + 0.5) * view.c
 					};
 				}
@@ -298,8 +367,9 @@
 		<div class="menu">
 			<h1>Garden<br />Defence</h1>
 			<p>
-				The zombies want to get to your house! Plant veg on the lawn to stop them. Beehives make
-				honey to buy more plants.
+				The zombies are coming down the path to your house! Before each wave, spend your coins on
+				plants. Shooters go beside the path, and walls and mud go on it. You get more coins after
+				each wave.
 			</p>
 			<ul class="kinds">
 				{#each PLANT_KINDS as kind (kind)}
@@ -315,10 +385,10 @@
 	{:else}
 		<div class="hud">
 			<span class="hearts" aria-label="{hud.hearts} hearts">
-				{#each { length: 3 }, i (i)}<span class:lost={i >= hud.hearts}>♥</span>{/each}
+				{#each { length: HEARTS }, i (i)}<span class:lost={i >= hud.hearts}>♥</span>{/each}
 			</span>
 			<span>Wave <strong data-testid="wave">{hud.wave}</strong></span>
-			<span class="honey" class:short data-testid="honey">🍯 {hud.honey}</span>
+			<span class="coins" class:short data-testid="coins">🪙 {hud.coins}</span>
 			<button
 				class="small"
 				onclick={() => (phase = 'paused')}
@@ -339,37 +409,66 @@
 			{/if}
 		</div>
 
-		<div class="cards">
-			{#each PLANT_KINDS as kind (kind)}
-				{@const open = hud.wave >= PLANTS[kind].from}
+		{#if picked}
+			<div class="picked">
+				<canvas width="96" height="96" {@attach icon(picked.kind)}></canvas>
+				<span class="what">
+					<strong>{PLANTS[picked.kind].name}</strong>
+					<small>Level {picked.level}</small>
+				</span>
 				<button
-					class="card"
-					class:on={selected === kind}
-					disabled={!open}
-					aria-pressed={selected === kind}
-					aria-label={PLANTS[kind].name}
-					onclick={() => (selected = kind)}
-					style:--cool={cooling[kind]}
-					class:dear={open && hud.honey < PLANTS[kind].cost}
+					class="act"
+					disabled={picked.up == null || hud.coins < picked.up}
+					onclick={() => {
+						if (picked && !upgrade(g, picked.id)) shake();
+						pick(picked?.id);
+						sync();
+					}}
 				>
-					{#if open}
-						<canvas width="96" height="96" {@attach icon(kind)}></canvas>
-						<span class="cost">{PLANTS[kind].cost}</span>
-					{:else}
-						<span class="lock">🔒<small>Wave {PLANTS[kind].from}</small></span>
-					{/if}
+					{#if picked.up == null}Top level{:else}Upgrade<small>🪙 {picked.up}</small>{/if}
 				</button>
-			{/each}
-			<button
-				class="card dig"
-				class:on={selected === 'dig'}
-				aria-pressed={selected === 'dig'}
-				aria-label="Dig up"
-				onclick={() => (selected = 'dig')}
-			>
-				⛏
+				<button
+					class="act plain"
+					onclick={() => {
+						if (picked) sell(g, picked.id);
+						picked = null;
+						sync();
+					}}
+				>
+					Sell<small>+🪙 {picked.sell}</small>
+				</button>
+				<button class="act plain shut" aria-label="Close" onclick={() => (picked = null)}>✕</button>
+			</div>
+		{:else}
+			<div class="cards">
+				{#each PLANT_KINDS as kind (kind)}
+					{@const open = hud.wave >= PLANTS[kind].from}
+					<button
+						class="card"
+						class:on={selected === kind}
+						disabled={!open || !hud.building}
+						aria-pressed={selected === kind}
+						aria-label={PLANTS[kind].name}
+						onclick={() => (selected = kind)}
+						class:dear={open && hud.coins < PLANTS[kind].cost}
+					>
+						{#if open}
+							<canvas width="96" height="96" {@attach icon(kind)}></canvas>
+							<span class="cost">{PLANTS[kind].cost}</span>
+						{:else}
+							<span class="lock">🔒<small>Wave {PLANTS[kind].from}</small></span>
+						{/if}
+					</button>
+				{/each}
+			</div>
+		{/if}
+		{#if hud.building}
+			<button class="big go" onclick={go} disabled={phase !== 'play'}>
+				Start wave {hud.wave} ▶
 			</button>
-		</div>
+		{:else}
+			<p class="going">Here they come!</p>
+		{/if}
 
 		{#if phase === 'paused'}
 			<div class="cover">
@@ -409,7 +508,7 @@
 		--sky: #bfe8ff;
 		--ink: #203018;
 		--leaf: #3f9b3a;
-		--honey: #ffb81c;
+		--gold: #ffc93c;
 		--safe-top: env(safe-area-inset-top);
 		position: fixed;
 		inset: 0;
@@ -545,14 +644,14 @@
 	.hearts .lost {
 		color: rgb(0 0 0 / 0.18);
 	}
-	.honey {
+	.coins {
 		padding: 4px 10px;
-		background: var(--honey);
+		background: var(--gold);
 		border: 3px solid var(--ink);
 		border-radius: 999px;
 		font-size: 20px;
 	}
-	.honey.short {
+	.coins.short {
 		animation: shake 0.35s;
 	}
 	@keyframes shake {
@@ -610,7 +709,7 @@
 	.cards {
 		width: min(480px, 100%);
 		display: grid;
-		grid-template-columns: repeat(6, 1fr);
+		grid-template-columns: repeat(7, 1fr);
 		gap: 6px;
 	}
 	.card {
@@ -628,15 +727,6 @@
 		background: #ffe066;
 		transform: translateY(-4px);
 		box-shadow: 0 4px 0 var(--ink);
-	}
-	/* Growing: a shade that drops away as it gets ready. */
-	.card::after {
-		content: '';
-		position: absolute;
-		inset: 0 0 auto;
-		height: calc(var(--cool, 0) * 100%);
-		background: rgb(0 0 0 / 0.3);
-		pointer-events: none;
 	}
 	.card.dear canvas {
 		opacity: 0.4;
@@ -658,7 +748,7 @@
 		text-align: center;
 	}
 	.cost::before {
-		content: '🍯';
+		content: '🪙';
 		font-size: 11px;
 		margin-right: 2px;
 	}
@@ -669,8 +759,71 @@
 	.lock small {
 		font-size: 10px;
 	}
-	.dig {
-		font-size: 28px;
+	.card:disabled canvas {
+		opacity: 0.5;
+	}
+	.go {
+		width: min(480px, 100%);
+		padding: 10px 18px;
+		font-size: 20px;
+	}
+	.go:disabled {
+		opacity: 0.6;
+	}
+	.going {
+		padding: 12px;
+		font: 20px var(--display);
+	}
+	.picked {
+		width: min(480px, 100%);
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 6px;
+		background: #fff8e0;
+		border: 3px solid var(--ink);
+		border-radius: 14px;
+		box-sizing: border-box;
+	}
+	.picked canvas {
+		width: 48px;
+		height: 48px;
+	}
+	.what {
+		flex: 1;
+		display: grid;
+		font-size: 15px;
+	}
+	.what strong {
+		font-weight: 400;
+	}
+	.what small {
+		font:
+			600 13px system-ui,
+			sans-serif;
+	}
+	.act {
+		display: grid;
+		padding: 6px 10px;
+		border: 3px solid var(--ink);
+		border-radius: 10px;
+		background: var(--leaf);
+		color: #fff;
+		font-size: 15px;
+	}
+	.act small {
+		font-size: 12px;
+	}
+	.act.plain {
+		background: #fff;
+		color: var(--ink);
+	}
+	.act:disabled {
+		opacity: 0.5;
+	}
+	.shut {
+		align-self: stretch;
+		place-items: center;
 	}
 	.cover {
 		position: absolute;

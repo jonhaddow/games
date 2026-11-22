@@ -13,7 +13,7 @@ The games:
 - **Pipes:** tap the pipes to turn them and get the water from the tap to the plant. Each level is bigger, and the board counts the levels done.
 - **Slide Sort:** one puzzle a day, the same for everyone: slide rows and columns of coloured tiles until each row is one colour, in as few moves as you can.
 - **Robot Path:** plan the robot's moves with arrows, then press Go. It rolls until it bumps into something; collect every gem in as few moves as you can for three stars.
-- **Garden Defence:** goofy zombies shuffle down the lawn towards the house. Plant veg in their way (tomatoes that throw, pumpkin walls, smelly onions, a chilli that goes bang) and beehives for the honey to pay for them. See off as many waves as you can.
+- **Garden Defence:** tower defence with goofy zombies shuffling down a garden path towards the house. Before each wave, spend your coins on plants: pea pods, melons, frost mint, sprinklers and sunflowers beside the path, pumpkin walls and mud on it. Upgrade or sell them between waves, and see off as many waves as you can.
 
 ## Tech stack
 
