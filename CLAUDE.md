@@ -82,9 +82,10 @@ A top-down pixel-art farming game for younger kids on a tablet (touch, landscape
 
 ## Garden Defence (`/garden`)
 
-- `src/lib/garden/garden.ts` is the rules (planting, waves, shots, munching, hearts): pure, seeded and unit tested. `draw.ts` draws everything on the canvas in code; `Garden.svelte` is the page and runs the loop.
-- Portrait: lanes run down the screen, zombies come through the hedge at the top and the house is at the bottom. Positions are in rows (`y`), a plant at row r fills r to r + 1.
+- `src/lib/garden/garden.ts` is the rules (the path, planting, upgrades, waves, shots, munching, hearts): pure, seeded and unit tested. `draw.ts` draws everything on the canvas in code; `Garden.svelte` is the page and runs the loop.
+- Tower defence, portrait: zombies walk a fixed winding path (`PATH`, a cell list) from the hedge at the top to the house at the bottom. A zombie's place is `d`, cells along the path (`pointAt(d)` gives x, y). A plant at (col, row) fills that cell.
+- Between waves (`building`) you spend coins: shooters on the grass, walls and mud on the path. Tap a plant to upgrade it (to level 3) or sell it for half. Nothing can be planted mid-wave. Coins only come from clearing a wave (`waveReward`); walls are mended between waves.
 - Friendly: beaten zombies nod off (Zzz) rather than die. Plants unlock by wave (`PLANTS[k].from`).
-- Tuning: `PLANTS`, `ZOMBIES`, `waveShape`, `waveSpawns` and `toughness`. Simulated, no plants loses wave 1, two rows of tomatoes reach about wave 7, a fuller garden about 12.
+- Tuning: `PLANTS`, `ZOMBIES`, `waveShape`, `waveSpawns`, `toughness`, `START_COINS` and `waveReward`. Simulated, no plants loses wave 1, pea pods alone reach about wave 8, a mixed, upgraded garden about 15.
 - The best is in `localStorage` (`garden-best`); the board is most waves survived.
-- In dev, `window.__garden` has the garden, `run(seconds)` to fast-forward and `screenOf(lane, row)` for taps (`e2e/garden.spec.ts`).
+- In dev, `window.__garden` has the garden, `run(seconds)` to fast-forward and `screenOf(col, row)` for taps (`e2e/garden.spec.ts`).
