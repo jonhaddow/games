@@ -6,6 +6,7 @@
 	import {
 		COLS,
 		HEARTS,
+		HOUSE,
 		PATH,
 		PLANTS,
 		PLANT_KINDS,
@@ -208,11 +209,10 @@
 						age: 0
 					});
 				} else if (e.type === 'heart') {
-					const [x] = PATH[PATH.length - 1];
 					effects.push({
 						kind: 'text',
 						text: '💔',
-						x: ox + (x + 0.5) * c,
+						x: ox + (HOUSE + 0.5) * c,
 						y: oy + ROWS * c,
 						age: 0
 					});

@@ -45,10 +45,12 @@ export const PATH: readonly (readonly [number, number])[] = (() => {
 })();
 /** Where on the path each lawn cell is (its index in PATH), if it's path. */
 const PATH_INDEX = new Map(PATH.map(([x, y], i) => [`${x},${y}`, i]));
-export const pathIndex = (col: number, row: number) => PATH_INDEX.get(`${col},${row}`);
+const pathIndex = (col: number, row: number) => PATH_INDEX.get(`${col},${row}`);
 export const onPath = (col: number, row: number) => PATH_INDEX.has(`${col},${row}`);
 /** A zombie past this far along the path has got to the house. */
 export const PATH_END = PATH.length - 1.4;
+/** The column where the path meets the house. */
+export const HOUSE = PATH[PATH.length - 1][0];
 
 /** The point `d` cells along the path, from the middle of its first cell. */
 export function pointAt(d: number) {
@@ -187,8 +189,8 @@ export const upgradeCost = (p: Pick<Plant, 'kind' | 'level'>) =>
 	p.level >= MAX_LEVEL ? null : PLANTS[p.kind].cost * p.level;
 /** Selling gives back half of all that's been spent on it. */
 export const sellValue = (p: Pick<Plant, 'kind' | 'level'>) => {
-	let spent = PLANTS[p.kind].cost;
-	for (let l = 1; l < p.level; l++) spent += PLANTS[p.kind].cost * l;
+	// Level n costs cost × (n - 1) on top of the last.
+	const spent = PLANTS[p.kind].cost * (1 + (p.level * (p.level - 1)) / 2);
 	return Math.floor(spent / 2);
 };
 
@@ -242,7 +244,6 @@ export type GardenEvent =
 export type Spawn = { at: number; kind: ZombieKind };
 
 export type Garden = {
-	time: number;
 	coins: number;
 	hearts: number;
 	/** The wave being played, or about to be. */
@@ -274,7 +275,6 @@ function random(g: Garden) {
 
 export function newGarden(seed = Date.now()): Garden {
 	return {
-		time: 0,
 		coins: START_COINS,
 		hearts: HEARTS,
 		wave: 1,
@@ -322,7 +322,6 @@ export const plantAt = (g: Garden, col: number, row: number) =>
 
 /** Why a plant can't go here now, or null if it can. */
 export function cantPlant(g: Garden, kind: PlantKind, col: number, row: number) {
-	if (g.over) return 'over';
 	if (!g.building) return 'wave';
 	if (g.wave < PLANTS[kind].from) return 'locked';
 	if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return 'outside';
@@ -364,7 +363,7 @@ export function sell(g: Garden, id: number) {
 
 /** Sends the zombies in. */
 export function startWave(g: Garden) {
-	if (!g.building || g.over) return false;
+	if (!g.building) return false;
 	g.building = false;
 	g.waveTime = 0;
 	g.queue = waveSpawns(g, g.wave);
@@ -378,7 +377,6 @@ const onLawn = (g: Garden) => g.zombies.filter((z) => z.d > 0.4 && z.hp > 0);
 export function step(g: Garden, dt: number) {
 	g.events = [];
 	if (g.over || g.building) return g;
-	g.time += dt;
 	g.waveTime += dt;
 	while (g.queue.length && g.queue[0].at <= g.waveTime) {
 		const s = g.queue.shift()!;
@@ -503,6 +501,8 @@ function stepZombies(g: Garden, dt: number) {
 		.filter((p) => PLANTS[p.kind].path)
 		.map((p) => ({ p, i: pathIndex(p.col, p.row)! }));
 	for (const z of g.zombies) {
+		// Beaten this step: it nods off where it is.
+		if (z.hp <= 0) continue;
 		const info = ZOMBIES[z.kind];
 		z.hit += dt;
 		z.slowFor = Math.max(0, z.slowFor - dt);
