@@ -1,5 +1,5 @@
 // Steering by tilting the phone like a steering wheel, from deviceorientation's
-// beta and gamma (see CLAUDE.md for why not devicemotion). Works however far back
+// beta and gamma (see AGENTS.md for why not devicemotion). Works however far back
 // the phone is tipped.
 
 /**
